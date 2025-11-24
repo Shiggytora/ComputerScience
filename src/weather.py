@@ -6,7 +6,7 @@ OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
 
 # Imports data from Open Meteo
-def get_current_weather(latitude: float, longitude: float, timezone: str = "auto"):
+def get_current_weather(latitude: float = 41.3851, longitude: float = 2.1734, timezone: str = "auto"):
     parameter = {
         "latitude": latitude,
         "longitude": longitude,
