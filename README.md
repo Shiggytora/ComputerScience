@@ -11,7 +11,7 @@ cd ComputerScience
 # create a virtuell environment
 python -m venv .venv
 
-# install dependency
+# install dependencies/libraries
 pip install -r requirements.txt
 
 # run streamlit/start the app
