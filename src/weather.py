@@ -7,7 +7,7 @@ OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
 # Imports data from Open Meteo
 def get_current_weather(latitude: float = 41.3851, longitude: float = 2.1734, timezone: str = "auto"):
-    parameter = {
+    params = {
         "latitude": latitude,
         "longitude": longitude,
         "current": "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code",
@@ -15,7 +15,7 @@ def get_current_weather(latitude: float = 41.3851, longitude: float = 2.1734, ti
     }
 
     try:
-        resp = requests.get(OPEN_METEO_BASE_URL, parameter = parameter, timeout = 5)  
+        resp = requests.get(OPEN_METEO_BASE_URL, params = params, timeout = 5)  
         resp.raise_for_status()
     except requests.RequestException as error:
         return {"error": str(error)}
