@@ -1,5 +1,5 @@
 import streamlit as st
-from src.amadeus_client import test_amadeus
+from src.amadeus import test_amadeus
 
 st.set_page_config(
     page_title = "Travel Matching",
