@@ -39,9 +39,9 @@ if st.button("Weather for Barcelona"):
         st.write("Current weather in Barcelona")
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Temperature", "{weather['temperature']} °C")
-            st.metric("Perceived", "{weather['apparent_temperature']} °C")
+            st.metric("Temperature", "f{weather['temperature']} °C")
+            st.metric("Perceived", "f{weather['apparent_temperature']} °C")
         with col2:
-            st.metric("Humidity", "{weather['humidity']} %")
-            st.metric("Wind Speed", "{weather['wind_speed]} km/h")
-        st.caption("Data from {weather['time']}")
+            st.metric("Humidity", "f{weather['humidity']} %")
+            st.metric("Wind Speed", "f{weather['wind_speed]} km/h")
+        st.caption(f"Data from {weather['time']}")
