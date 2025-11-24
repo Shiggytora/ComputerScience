@@ -43,5 +43,5 @@ if st.button("Weather for Barcelona"):
             st.metric("Perceived", f"{weather['apparent_temperature']} °C")
         with col2:
             st.metric("Humidity", f"{weather['humidity']} %")
-            st.metric("Wind Speed", f"{weather['wind_speed']} km/h")
+            st.metric("Weather Code", f"{weather['weather_code']}")
         st.caption(f"Data from {weather['time']}")
