@@ -18,7 +18,10 @@ def get_amadeus_client():
 def test_amadeus():
     amadeus = get_amadeus_client()
     try:
-        response = amadeus.reference_data.locations.get(keyword="Zurich", subType="AIRPORT")
+        response = amadeus.reference_data.locations.get(
+            keyword="ZRH", 
+            subType="AIRPORT"
+        )
         return response.data
     except ResponseError as error:
         return str(error)
