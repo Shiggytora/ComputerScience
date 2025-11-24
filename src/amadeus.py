@@ -18,9 +18,12 @@ def get_amadeus_client():
 def test_amadeus():
     amadeus = get_amadeus_client()
     try:
-        response = amadeus.reference_data.locations.get(
-            keyword="ZRH", 
-            subType="AIRPORT"
+        response = amadeus.shopping.flight_offers_search.get(
+            originLocationCode = "BCN",
+            destinationLocationCode = "CDG",
+            departureDate = "2025-12-15",
+            adults = 1,
+            max = 5
         )
         return response.data
     except ResponseError as error:
