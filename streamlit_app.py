@@ -18,8 +18,8 @@ from src.matching import test_matching
 from src.machinelearning import test_ml
 from src.visuals import test_visuals
 
-st.write("Amadeus"; test_amadeus())
-st.write("Data"; test_data())
-st.write("Matching"; test_matching())
-st.write("Maching Learning"; test_ml())
-st.write("Visuals"; test_visuals())
+st.write("Amadeus", test_amadeus())
+st.write("Data", test_data())
+st.write("Matching", test_matching())
+st.write("Maching Learning", test_ml())
+st.write("Visuals", test_visuals())
