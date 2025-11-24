@@ -1,0 +1,25 @@
+# Python Bytecode, bzw. Automatische Python Cache-Dateien
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environments / Lokale Python-Installationen
+.venv/
+venv/
+
+# Environment Variables (IMPORTANT!!) / Amadeus Keys
+.env
+
+# VS Code / PyCharm Settings / Lokale IDE-Dateien für VS Code
+.vscode/
+.idea/
+
+# Mac / Windows System Files 
+.DS_Store
+Thumbs.db
+
+# Models (optional, wenn groß)
+*.pkl
+
+# Streamlit cache / Temporäre Streamlitdateien
+.streamlit/
