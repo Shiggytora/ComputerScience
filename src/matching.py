@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-# ---------- Fake data for now ----------
+# fake data 
 DESTINATIONS = [
     {
         "name": "Barcelona",
@@ -28,7 +28,7 @@ DESTINATIONS = [
         "currency": "ISK",
         "visa_required": False,
     },
-    # add more...
+    
 ]
 
 
@@ -175,3 +175,4 @@ def test_matching():
 
     return "Matching successful"
     
+
