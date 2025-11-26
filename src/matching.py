@@ -1,18 +1,26 @@
 # We use this for the main logic of our matching feature
 
-import streamlit as st
-
-#importing the data from the APIs to get the information in order to proceed the matching based on User inputs 
-
-from amadeus import get_flight_price, get_hotel_price #takes the flight price and the hotel price from the API Amadeus 
+import streamlit as st #importing the data from the APIs to get the information in order to proceed the matching based on User inputs 
 import requests
-
 OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"#takes the weather forecast over the next 14 days from the API Openmeteo 
+from amadeus import Client, ResponseError #takes the flight price and the hotel price from the API Amadeus 
+from src.config import get_secret
 
 
 # -------------------------------------------------------------------
 # 1) COMPUTE FACTOR WEIGHTS BASED ON USER PRIORITIES
 # -------------------------------------------------------------------
+def test_matching():
+    try:
+        response = amadeus.shopping.flight_offers_search.get(
+            originLocationCode='SYD', destinationLocationCode='BKK', departureDate='2022-07-01', adults=1)
+        print(response.data)
+    except ResponseError as error:
+        raise error
+
+
+
+
 def compute_factor_weights(priorities: dict) -> dict:
     """
     priorities example:
