@@ -64,8 +64,8 @@ user_prefs = {
 }
 
 #Run the matching 
-from matching import rank_destinations
-results = rank_destinations(destinations, user_prefs, priorities)
+#from matching import rank_destinations
+#results = rank_destinations(destinations, user_prefs, priorities)
 
 
 
