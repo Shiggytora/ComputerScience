@@ -4,11 +4,10 @@ import streamlit as st
 
 #importing the data from the APIs to get the information in order to proceed the matching based on User inputs 
 
-from api.amadeus_client import get_flight_price, get_hotel_price #takes the flight price and the hotel price from the API Amadeus 
-from api.openmeteo_client import get_weather_forecast #takes the weather forecast over the next 14 days from the API Openmeteo 
-from api.visualcrossing_client import get_typical_weather # ?
-from api.currency_client import convert_currency #takes the exchange rate of the relevant currency from the API Currency 
-from api.travelbuddy_client import check_visa #this API looks if there is a specific entry requirement in the selected country from the user 
+from amadeus import get_flight_price, get_hotel_price #takes the flight price and the hotel price from the API Amadeus 
+import requests
+
+OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"#takes the weather forecast over the next 14 days from the API Openmeteo 
 
 
 # -------------------------------------------------------------------
