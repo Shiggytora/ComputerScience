@@ -40,4 +40,32 @@ if st.button("Weather for Barcelona"):
         st.metric("Temperature", f"{weather['temperature']} °C")
         st.metric("Perceived", f"{weather['apparent_temperature']} °C")
         st.metric("Humidity", f"{weather['humidity']} %")
+
         st.caption(f"Data from {weather['time']}")
+
+#Budget slider 
+budget_min, budget_max = st.slider(
+    "Total budget (€)",
+    min_value=0,
+    max_value=3000,
+    value=(300, 1200)
+
+#Creating user preferences 
+user_prefs = {
+    "origin": "CDG",
+    "weather_preference": weather_pref,
+    "budget_min": budget_min,
+    "budget_max": budget_max,
+    "continent": continent,
+    "tourism_level": tourism,
+    "city_size": city_size,
+    "nationality": nationality,
+}
+
+#Run the matching 
+from matching import rank_destinations
+results = rank_destinations(destinations, user_prefs, priorities)
+
+
+
+
