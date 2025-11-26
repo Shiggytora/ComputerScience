@@ -2,177 +2,135 @@
 
 import streamlit as st
 
-# fake data 
-DESTINATIONS = [
-    {
-        "name": "Barcelona",
-        "country": "Spain",
-        "continent": "Europe",
-        "typical_temp_spring": 18,
-        "cost_level": "medium",
-        "tourist_level": "high",
-        "city_size": "large",
-        "airport_code": "BCN",
-        "currency": "EUR",
-        "visa_required": False,
-    },
-    {
-        "name": "Reykjavik",
-        "country": "Iceland",
-        "continent": "Europe",
-        "typical_temp_spring": 5,
-        "cost_level": "high",
-        "tourist_level": "medium",
-        "city_size": "small",
-        "airport_code": "KEF",
-        "currency": "ISK",
-        "visa_required": False,
-    },
-    
-]
+#importing the data from the APIs to get the information in order to proceed the matching based on User inputs 
+
+from api.amadeus_client import get_flight_price, get_hotel_price #takes the flight price and the hotel price from the API Amadeus 
+from api.openmeteo_client import get_weather_forecast #takes the weather forecast over the next 14 days from the API Openmeteo 
+from api.visualcrossing_client import get_typical_weather # ?
+from api.currency_client import convert_currency #takes the exchange rate of the relevant currency from the API Currency 
+from api.travelbuddy_client import check_visa #this API looks if there is a specific entry requirement in the selected country from the user 
 
 
-def compute_factor_weights(selected_factors, priorities):
+# -------------------------------------------------------------------
+# 1) COMPUTE FACTOR WEIGHTS BASED ON USER PRIORITIES
+# -------------------------------------------------------------------
+def compute_factor_weights(priorities: dict) -> dict:
     """
-    selected_factors: list like ["Weather", "Budget", "Distance"]
-    priorities: dict factor -> rank (1 = most important)
+    priorities example:
+    {
+        "weather": 1,
+        "budget": 2,
+        "distance": 3
+    }
+    1 = most important.
+    We convert this into normalized weights.
     """
-    # convert rank to weight (inverse: smaller rank = bigger weight)
-    # simple method: weight = (max_rank + 1 - rank) / sum_all
     max_rank = max(priorities.values())
-    raw = {}
-    for f in selected_factors:
-        rank = priorities[f]
-        raw[f] = max_rank + 1 - rank
-
+    raw = {k: max_rank + 1 - v for k, v in priorities.items()}
     total = sum(raw.values())
-    return {f: raw[f] / total for f in raw}
+    return {k: raw[k] / total for k in raw}
 
 
-def score_destination(dest, prefs, weights):
-    score = 0.0
+# -------------------------------------------------------------------
+# 2) WEATHER SUBSCORE FUNCTION
+# -------------------------------------------------------------------
+def calculate_weather_subscore(preference, temperature):
+    """
+    preference: warm | mild | cold
+    temperature: actual destination temperature
+    Returns a score between 0 and 1.
+    """
+    if preference == "warm":
+        target = 25
+    elif preference == "mild":
+        target = 18
+    else:
+        target = 5
 
-    # WEATHER
-    if "Weather" in weights:
-        desired = prefs["desired_temp"]  # "Warm", "Mild", "Cold"
-        t = dest["typical_temp_spring"]
-        if desired == "Warm":
-            target = 24
-        elif desired == "Mild":
-            target = 18
+    return max(0, 1 - abs(temperature - target) / 20)
+
+
+# -------------------------------------------------------------------
+# 3) MAIN FUNCTION TO SCORE A DESTINATION
+# -------------------------------------------------------------------
+def score_destination(dest, user_prefs, weights):
+
+    score = 0
+
+    #  WEATHER 
+    if "weather" in weights:
+        weather = get_weather_forecast(dest["lat"], dest["lon"])
+        current_temp = weather["temp"]
+        sub = calculate_weather_subscore(user_prefs["weather_preference"], current_temp)
+        score += weights["weather"] * sub
+
+    #  BUDGET 
+    if "budget" in weights:
+        flight_price = get_flight_price(user_prefs["origin"], dest["airport"])
+        hotel_price = get_hotel_price(dest["city"])
+
+        total_cost_local = flight_price + hotel_price
+        total_cost_eur = convert_currency(total_cost_local, dest["currency"], "EUR")
+
+        if user_prefs["budget_min"] <= total_cost_eur <= user_prefs["budget_max"]:
+            sub = 1
         else:
-            target = 5
-        subscore = max(0, 1 - abs(t - target) / 20)
-        score += weights["Weather"] * subscore
+            sub = 0
+        score += weights["budget"] * sub
 
-    # BUDGET
-    if "Budget" in weights:
-        desired = prefs["budget_level"]  # "Low", "Medium", "High"
-        levels = ["Low", "Medium", "High"]
-        dest_level = dest["cost_level"].capitalize()
-        diff = abs(levels.index(desired) - levels.index(dest_level))
-        subscore = {0: 1, 1: 0.5}.get(diff, 0)
-        score += weights["Budget"] * subscore
-
-    # CONTINENT / DISTANCE
-    if "Continent / Distance" in weights:
-        if prefs["continent"] == "Any" or dest["continent"] == prefs["continent"]:
-            subscore = 1
+    # DISTANCE / CONTINENT 
+    if "distance" in weights:
+        if user_prefs["continent"] == "any":
+            sub = 1
         else:
-            subscore = 0
-        score += weights["Continent / Distance"] * subscore
+            same = dest["continent"].lower() == user_prefs["continent"].lower()
+            sub = 1 if same else 0.2
+        score += weights["distance"] * sub
 
-    # TOURISM
-    if "Tourism" in weights:
-        desired = prefs["tourist_level"]  # "Quiet", "Balanced", "Very touristic"
-        # very rough mapping
-        mapping = {
-            "low": "Quiet",
-            "medium": "Balanced",
-            "high": "Very touristic",
-        }
-        dest_level = mapping[dest["tourist_level"]]
-        subscore = 1 if dest_level == desired else 0.5
-        score += weights["Tourism"] * subscore
+    # TOURISM LEVEL 
+    if "tourism" in weights:
+        sub = 1 if dest["tourist_level"] == user_prefs["tourism_level"] else 0.5
+        score += weights["tourism"] * sub
 
-    # CITY SIZE
-    if "City size" in weights:
-        desired = prefs["city_size"]  # "Small", "Medium", "Large"
-        mapping = {
-            "small": "Small",
-            "medium": "Medium",
-            "large": "Large",
-        }
-        dest_size = mapping[dest["city_size"]]
-        subscore = 1 if dest_size == desired else 0.5
-        score += weights["City size"] * subscore
+    # CITY SIZE 
+    if "city_size" in weights:
+        sub = 1 if dest["city_size"] == user_prefs["city_size"] else 0.5
+        score += weights["city_size"] * sub
+
+    # VISA REQUIREMENT 
+    if "visa" in weights:
+        visa_info = check_visa(user_prefs["nationality"], dest["country"])
+        sub = 1 if not visa_info["required"] else 0
+        score += weights["visa"] * sub
 
     return score
 
 
-def main():
-    st.title("Travel Match 🔍✈️")
+# -------------------------------------------------------------------
+# 4) RANK DESTINATIONS (SORT BY SCORE)
+# -------------------------------------------------------------------
+def rank_destinations(destinations, user_prefs, priorities):
+    """
+    destinations : list of destination dictionaries
+    user_prefs : user preferences dictionary
+    priorities : dictionary of prioritized factors (1 = most important)
+    """
+    weights = compute_factor_weights(priorities)
+    results = []
 
-    st.sidebar.header("Your preferences")
+    for d in destinations:
+        s = score_destination(d, user_prefs, weights)
+        results.append({"destination": d, "score": s})
 
-    # ----- User inputs -----
-    budget_level = st.sidebar.selectbox("Budget", ["Low", "Medium", "High"])
-    desired_temp = st.sidebar.selectbox("Preferred weather", ["Warm", "Mild", "Cold"])
-    continent = st.sidebar.selectbox("Preferred continent", ["Any", "Europe", "Asia", "Africa", "North America", "South America", "Oceania"])
-    tourist_level = st.sidebar.selectbox("Tourism level", ["Quiet", "Balanced", "Very touristic"])
-    city_size = st.sidebar.selectbox("City size", ["Small", "Medium", "Large"])
+    # Sort by score (highest first)
+    results.sort(key=lambda x: x["score"], reverse=True)
 
-    # Factors to prioritize
-    st.sidebar.markdown("### Choose your top factors (3–5)")
-    all_factors = ["Weather", "Budget", "Continent / Distance", "Tourism", "City size"]
-    selected_factors = st.sidebar.multiselect("Factors", all_factors, default=["Weather", "Budget", "Continent / Distance"])
+    return results
 
-    # Ranks
-    priorities = {}
-    if selected_factors:
-        st.sidebar.markdown("#### Rank them (1 = most important)")
-        for f in selected_factors:
-            priorities[f] = st.sidebar.number_input(f"Rank for {f}", min_value=1, max_value=len(selected_factors), value=1)
-
-    if st.sidebar.button("Find my destinations"):
-        if not selected_factors:
-            st.error("Please select at least one factor.")
-            return
-
-        prefs = {
-            "budget_level": budget_level,
-            "desired_temp": desired_temp,
-            "continent": continent,
-            "tourist_level": tourist_level,
-            "city_size": city_size,
-        }
-
-        weights = compute_factor_weights(selected_factors, priorities)
-
-        # compute scores
-        scored = []
-        for d in DESTINATIONS:
-            s = score_destination(d, prefs, weights)
-            scored.append((d, s))
-
-        scored.sort(key=lambda x: x[1], reverse=True)
-
-        st.subheader("Best matches for you")
-        for dest, s in scored[:5]:
-            st.markdown(f"### {dest['name']}, {dest['country']}  — Score: {s:.2f}")
-            st.write(f"Continent: {dest['continent']}")
-            st.write(f"Typical spring temp: {dest['typical_temp_spring']}°C")
-            st.write(f"Cost level: {dest['cost_level']}")
-            st.write(f"Tourism level: {dest['tourist_level']}")
-            st.write(f"City size: {dest['city_size']}")
-            st.divider()
-
-
-if __name__ == "__main__":
-    main()
 
 def test_matching():
 
     return "Matching successful"
     
+
 
