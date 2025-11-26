@@ -54,7 +54,7 @@ budget_min, budget_max = st.slider(
 #Creating user preferences 
 user_prefs = {
     "origin": "CDG",
-    "weather_preference": weather_pref,
+    "weather_preference": weather,
     "budget_min": budget_min,
     "budget_max": budget_max,
     "continent": continent,
