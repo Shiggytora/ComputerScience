@@ -49,6 +49,7 @@ budget_min, budget_max = st.slider(
     min_value=0,
     max_value=3000,
     value=(300, 1200)
+)
 
 #Creating user preferences 
 user_prefs = {
