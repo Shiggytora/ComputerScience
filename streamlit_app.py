@@ -57,10 +57,10 @@ user_prefs = {
     "weather_preference": get_current_weather(),
     "budget_min": budget_min,
     "budget_max": budget_max,
-    "continent": continent,
-    "tourism_level": tourism,
-    "city_size": city_size,
-    "nationality": nationality,
+   # "continent": continent,
+   # "tourism_level": tourism,
+   # "city_size": city_size,
+   # "nationality": nationality,
 }
 
 #Run the matching 
