@@ -9,7 +9,7 @@ CSV_PATH = BASE_DIR / "data" / "destinations.csv"
 def create_table(cur):
     cur.execute(
         """
-        Create table destinations (
+        CREATE TABLE IF NOT EXISTS destinations (
             id                  INTEGER PRIMARY KEY,
             city                TEXT,
             country             TEXT,
@@ -50,6 +50,8 @@ def load_csv():
             )
             for r in reader
         ]
+        print(f"Loaded {len(data)} destinations")
+        return data
 
 def create_db():
     DB_PATH.parent.mkdir(exist_ok=True)
@@ -63,7 +65,9 @@ def create_db():
         destinations = load_csv()
     else:
         print("Error, no csv could be loaded.")
-        destinations = ""
+        return
+    
+    cur.execute("DELETE FROM destinations;")
 
     cur.executemany(
         """
