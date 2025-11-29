@@ -61,10 +61,14 @@ def create_db():
 
     create_table(cur)
 
-    if CSV_PATH.exists():
-        destinations = load_csv()
-    else:
-        print("Error, no csv could be loaded.")
+    if not CSV_PATH.exists():
+        print("Error, not found")
+        return
+    
+    destinations = load_csv()
+
+    if not destinations:
+        print("CSV failed to be loaded")
         return
     
     cur.execute("DELETE FROM destinations;")
