@@ -112,7 +112,10 @@ elif st.session_state.state == "Matching":
         submitted = st.form_submit_button("Confirm choice")
 
     if submitted:
-        if choice is not None:
+        if choice is None:
+            st.warning("Please select a destination before confirming.")
+        
+        else:
             picked = next(y for y in locations if y["id"] == choice)
             st.session_state.chosen.append(picked)
             st.session_state.id_used.extend(ids)
@@ -126,8 +129,6 @@ elif st.session_state.state == "Matching":
             
             st.rerun()
         
-        else:
-            st.warning("Please select a destination before confirming.")
 
 elif st.session_state.state == "Results":
     st.subheader("Your final recommendation")
