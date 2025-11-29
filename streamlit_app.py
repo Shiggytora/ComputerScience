@@ -98,30 +98,23 @@ elif st.session_state.state == "Matching":
 
     ids = [y["id"] for y in locations]
 
-    st.session_state.setdefault("current_choice", None)
-
-    with st.form("destination_choice_form"):
-        selected = st.radio(
+    choice = st.radio(
         "Choose one destination",
         options=ids,
-        index=ids.index(st.session_state["current_choice"]) if st.session_state["current_choice"] in ids else None,
-        format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
-        key="destination_choice"
-        )
+        index=None,
+        key="destination_choice",
+        format_func=lambda_id: next(y["city"] for y in locations if y["id"] == _id),
+    )
 
-        st.session_state.current_choice = selected
+    for y in locations:
+        st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
 
-        for y in locations:
-          st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
-
-        submitted = st.form_submit_button("Confirm choice")
-
-    if submitted:
-        if st.session_state.current_choice is None:
+    if st.button("Confirm choice"):
+        if choice is None:
             st.warning("Please select a destination before confirming.")
         
         else:
-            picked = next(y for y in locations if y["id"] == st.session_state.current_choice)
+            picked = next(y for y in locations if y["id"] == choice)
             st.session_state.chosen.append(picked)
             st.session_state.id_used.extend(ids)
             st.session_state.round += 1
