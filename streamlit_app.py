@@ -79,7 +79,7 @@ if st.session_state.state == "Start":
         st.session_state.chosen = []
         st.session_state.round = 0
         st.session_state.state = "Matching"
-        st.experimental_rerun()
+        st.rerun()
 
 elif st.session_state.state == "Matching":
 
@@ -94,7 +94,7 @@ elif st.session_state.state == "Matching":
     if not locations:
         st.error("No destinations left. Please restart")
         st.session_state.state = "Start"
-        st.experimental_rerun()
+        st.rerun()
 
     ids = [y["id"] for y in locations]
 
@@ -115,7 +115,7 @@ elif st.session_state.state == "Matching":
 
         if st.session_state.round >= ROUNDS:
             st.session_state.state = "Results"
-        st.experimental_rerun()
+        st.rerun()
 
 elif st.session_state.state == "Results":
     st.subheader("Your final recommendation")
@@ -132,4 +132,4 @@ elif st.session_state.state == "Results":
 
     if st.button("Restart"):
         st.session_state.state = "Start"
-        st.experimental_rerun()
+        st.rerun()
