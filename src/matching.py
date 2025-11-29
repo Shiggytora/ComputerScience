@@ -6,7 +6,5 @@ OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"#takes the weather
 from amadeus import Client, ResponseError #takes the flight price and the hotel price from the API Amadeus 
 from src.config import get_secret
 
-
-
-
-
+def test_matching():
+    return "Test Matching successful"
