@@ -59,7 +59,7 @@ def create_db():
     create_table(cur)
 
     if CSV_PATH.exists():
-        destinations = load_csv
+        destinations = load_csv()
     else:
         print("Error, no csv could be loaded.")
         destinations = ""
