@@ -6,11 +6,11 @@ import random
 OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"#takes the weather forecast over the next 14 days from the API Openmeteo 
 from amadeus import Client, ResponseError #takes the flight price and the hotel price from the API Amadeus 
 from typing import List, Dict, Any
-from src.data import get_distinations_by_budget, get_all_destinations
+from src.data import get_destinations_by_budget, get_all_destinations
 from src.config import get_secret
 
 def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]]:
-    budget_matches = get_distinations_by_budget(total_budget, trip_days)
+    budget_matches = get_destinations_by_budget(total_budget, trip_days)
     if budget_matches:
         return budget_matches
     return get_all_destinations()
