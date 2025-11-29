@@ -101,6 +101,7 @@ elif st.session_state.state == "Matching":
     choice = st.radio(
         "Choose one destination",
         options=ids,
+        index=None,
         format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
     )
 
