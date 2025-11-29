@@ -46,7 +46,7 @@ if st.button("Weather for Barcelona"):
         st.caption(f"Data from {weather['time']}")
 
 
-Rounds = 3 
+ROUNDS = 3
 
 if "state" not in st.session_state:
     st.session_state.state = "Start"
@@ -61,16 +61,16 @@ if st.session_state.state == "Start":
 
     total_budget = st.number_input(
         "Total budget (CHF)",
-        min_value = 100,
-        max_value = 10000,
-        value = 2000,
+        min_value=100,
+        max_value=10000,
+        value=2000,
     )
 
     trip_days = st.number_input(
-        "Trip lenght (in days)",
-        min_value = 1,
-        max_value = 60,
-        value = 7
+        "Trip length (in days)",
+        min_value=1,
+        max_value=60,
+        value=7
     )
 
     if st.button("Start Matching"):
@@ -83,7 +83,7 @@ if st.session_state.state == "Start":
 
 elif st.session_state.state == "Matching":
 
-    st.subheader(f"Round {st.session_state.round + 1} of {Rounds}")
+    st.subheader(f"Round {st.session_state.round + 1} of {ROUNDS}")
 
     locations = test_locations(
         st.session_state.budget_matches,
@@ -113,7 +113,7 @@ elif st.session_state.state == "Matching":
         st.session_state.id_used.extend(ids)
         st.session_state.round += 1
 
-        if st.session_state.round >= Rounds:
+        if st.session_state.round >= ROUNDS:
             st.session_state.state = "Results"
         st.rerun()
 
