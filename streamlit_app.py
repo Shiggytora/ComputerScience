@@ -46,7 +46,7 @@ if st.button("Weather for Barcelona"):
         st.caption(f"Data from {weather['time']}")
 
 
-ROUNDS = 3 
+ROUNDS = 10 
 
 if "state" not in st.session_state:
     st.session_state.state = "Start"
