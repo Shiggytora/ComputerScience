@@ -1,6 +1,8 @@
 import streamlit as st
 from src.amadeus import test_amadeus
 from src.weather import get_current_weather
+from src.matching import filter_by_budget, test_locations, ranking_destinations
+from typing import List, Dict, Any
 
 st.set_page_config(
     page_title = "Travel Matching",
@@ -43,30 +45,91 @@ if st.button("Weather for Barcelona"):
 
         st.caption(f"Data from {weather['time']}")
 
-#Budget slider 
-budget_min, budget_max = st.slider(
-    "Total budget (€)",
-    min_value=0,
-    max_value=3000,
-    value=(300, 1200)
-)
 
-#Creating user preferences 
-user_prefs = {
-    "origin": "CDG",
-    "weather_preference": get_current_weather(),
-    "budget_min": budget_min,
-    "budget_max": budget_max,
-   # "continent": continent,
-   # "tourism_level": tourism,
-   # "city_size": city_size,
-   # "nationality": nationality,
-}
+Rounds = 3 
 
-#Run the matching 
-#from matching import rank_destinations
-#results = rank_destinations(destinations, user_prefs, priorities)
+if "state" not in st.session_state:
+    st.session_state.state = "Start"
+    st.session_state.budget_matches = []
+    st.session_state.id_used = []
+    st.session_state.chosen = []
+    st.session_state.round = 0
 
+if st.session_state.state == "Start":
 
+    st.subheader("Your Input")
 
+    total_budget = st.number_input(
+        "Total budget (CHF)",
+        min_value = 100,
+        max_value = 10000,
+        value = 2000,
+    )
 
+    trip_days = st.number_input(
+        "Trip lenght (in days)",
+        min_value = 1,
+        max_value = 60,
+        value = 7
+    )
+
+    if st.button("Start Matching"):
+        st.session_state.budget_matches = filter_by_budget(total_budget, trip_days)
+        st.session_state.id_used = []
+        st.session_state.chosen = []
+        st.session_state.round = 0
+        st.session_state.state = "Matching"
+        st.experimental_rerun()
+
+elif st.session_state.state == "Matching":
+
+    st.subheader(f"Round {st.session_state.round + 1} of {Rounds}")
+
+    locations = test_locations(
+        st.session_state.budget_matches,
+        st.session_state.id_used,
+        x=3,
+    )
+
+    if not locations:
+        st.error("No destinations left. Please restart")
+        st.session_state.state = "Start"
+        st.experimental_rerun()
+
+    ids = [y["id"] for y in locations]
+
+    choice = st.radio(
+        "Choose one destination",
+        options=ids,
+        format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
+    )
+
+    for y in locations:
+        st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
+
+    if st.button("Confirm choice"):
+        picked = next(y for y in locations if y["id"] == choice)
+        st.session_state.chosen.append(picked)
+        st.session_state.id_used.extend(ids)
+        st.session_state.round += 1
+
+        if st.session_state.round >= Rounds:
+            st.session_state.state = "Results"
+        st.experimental_rerun()
+
+elif st.session_state.state == "Results":
+    st.subheader("Your final recommendation")
+
+    ranked = ranking_destinations(
+        st.session_state.budget_matches,
+        st.session_state.chosen,
+    )
+
+    best = ranked[0]
+    st.success(f"Your best match: **{best['city']}**, {best['country']}")
+
+    st.write(best)
+
+    if st.button("Restart"):
+        st.session_state.state = "Start"
+        st.experimental_rerun()
