@@ -1,8 +1,8 @@
 import streamlit as st
 from src.amadeus import test_amadeus
 from src.weather import get_current_weather
-from src.matching import filter_by_budget, test_locations, ranking_destinations
 from typing import List, Dict, Any
+from src.matching import filter_by_budget, test_locations, ranking_destinations
 
 st.set_page_config(
     page_title = "Travel Matching",
