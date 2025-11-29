@@ -29,7 +29,7 @@ def create_table(cur):
     )
 
 def load_csv():
-    with open(CSV_path, newline='', encoding='utf-8') as csvfile:
+    with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         return [
             (
@@ -38,7 +38,7 @@ def load_csv():
                 r["country"],
                 r["iata_code"],
                 float(r["latitude"]),
-                float(r["longitude"])
+                float(r["longitude"]),
                 float(r["avg_budget_per_day"]),
                 float(r["city_size"]),
                 float(r["tourist_rating"]),
@@ -57,7 +57,7 @@ def create_db():
     cur = conn.cursor()
 
     create_table(cur)
-    
+
     if CSV_PATH.exists():
         destinations = load_csv
     else:
