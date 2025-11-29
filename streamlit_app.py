@@ -98,27 +98,36 @@ elif st.session_state.state == "Matching":
 
     ids = [y["id"] for y in locations]
 
-    choice = st.radio(
+    with st.form("destination_choice_form"):
+        choice = st.radio(
         "Choose one destination",
         options=ids,
         index=None,
         format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
-    )
+        )
 
-    for y in locations:
-        st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
+        for y in locations:
+          st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
 
-    if st.button("Confirm choice"):
-        picked = next(y for y in locations if y["id"] == choice)
-        st.session_state.chosen.append(picked)
-        st.session_state.id_used.extend(ids)
-        st.session_state.round += 1
+        submitted = st.form_submit_button("Confirm choice")
 
-        if st.session_state.round >= ROUNDS:
-            st.session_state.state = "Results"
-        else: 
-            st.session_state.state = "Matching"
-        st.rerun()
+    if submitted:
+        if choice is not None:
+            picked = next(y for y in locations if y["id"] == choice)
+            st.session_state.chosen.append(picked)
+            st.session_state.id_used.extend(ids)
+            st.session_state.round += 1
+
+            if st.session_state.round >= ROUNDS:
+                st.session_state.state = "Results"
+    
+            else: 
+                st.session_state.state = "Matching"
+            
+            st.rerun()
+        
+        else:
+            st.warning("Please select a destination before confirming.")
 
 elif st.session_state.state == "Results":
     st.subheader("Your final recommendation")
