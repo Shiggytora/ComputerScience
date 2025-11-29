@@ -103,7 +103,7 @@ elif st.session_state.state == "Matching":
         options=ids,
         index=None,
         key="destination_choice",
-        format_func=lambda_id: next(y["city"] for y in locations if y["id"] == _id),
+        format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
     )
 
     for y in locations:
