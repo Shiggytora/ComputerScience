@@ -46,14 +46,14 @@ def scoring_destinations(destination: Dict[str, Any], preference: Dict[str, floa
     
     score = 0
     for feature in NUMERIC_FILTERS:
-        score = abs(destination[feature] - preference[feature])
+        score += abs(destination[feature] - preference[feature])
     
     return score
 
 def ranking_destinations(budget_matches: List[Dict[str, Any]], chosen: List[Dict[str, Any]]):
     preference = preference_vector(chosen)
     scored = [(scoring_destinations(y, preference), y) for y in budget_matches]
-    scored.sort(key=lambda c: c[0], reverse=True)
+    scored.sort(key=lambda c: c[0])
     return [y for _, y in scored]
 
 
