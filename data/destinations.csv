@@ -1,101 +1,101 @@
-id,city,country,continent,iata_code,latitude,longitude,avg_budget_per_day,city_size,tourist_rating,tourist_volume_base,is_coastal,climate_category,cost_index
-1,London,UK,Europe,LHR,51.51,-0.13,150,5,5,5,0,3,0.55
-2,Paris,France,Europe,CDG,48.86,2.35,140,5,5,5,0,3,0.5
-3,Rome,Italy,Europe,FCO,41.9,12.49,120,5,5,5,0.5,3,0.41
-4,Barcelona,Spain,Europe,BCN,41.38,2.17,110,5,5,5,1,3,0.36
-5,Berlin,Germany,Europe,BER,52.52,13.4,100,5,5,5,0,3,0.32
-6,Athens,Greece,Europe,ATH,37.98,23.72,80,3,5,5,0.5,3,0.23
-7,Moscow,Russia,Europe,SVO,55.75,37.62,70,5,5,5,0,1,0.18
-8,Istanbul,Turkey,Europe,IST,41.01,28.96,60,5,5,5,1,3,0.14
-9,Amsterdam,Netherlands,Europe,AMS,52.37,4.9,130,3,5,5,0,3,0.45
-10,Prague,Czech Republic,Europe,PRG,50.08,14.42,60,3,5,5,0,3,0.14
-11,Venice,Italy,Europe,VCE,45.44,12.33,100,3,5,5,1,3,0.32
-12,Santorini,Greece,Europe,JTR,36.4,25.43,120,1,5,3,1,3,0.41
-13,Reykjavik,Iceland,Europe,KEF,64.13,-21.9,180,3,5,3,1,1,0.68
-14,Dubrovnik,Croatia,Europe,DBV,42.65,18.09,90,1,5,3,1,3,0.27
-15,Vienna,Austria,Europe,VIE,48.21,16.37,100,3,5,5,0,3,0.32
-16,Copenhagen,Denmark,Europe,CPH,55.68,12.57,130,3,5,5,1,3,0.45
-17,Lisbon,Portugal,Europe,LIS,38.72,-9.14,90,3,5,3,1,3,0.27
-18,Budapest,Hungary,Europe,BUD,47.5,19.04,70,3,5,5,0,3,0.18
-19,Zurich,Switzerland,Europe,ZRH,47.37,8.54,200,3,3,3,0,3,0.77
-20,Stockholm,Sweden,Europe,ARN,59.33,18.07,150,3,5,3,1,1,0.55
-21,Dublin,Ireland,Europe,DUB,53.35,-6.26,100,3,3,3,0,3,0.32
-22,Bergen,Norway,Europe,BGO,60.39,5.32,160,1,5,3,1,3,0.59
-23,Tokyo,Japan,Asia,NRT,35.68,139.69,150,5,5,5,0.5,3,0.55
-24,Seoul,South Korea,Asia,ICN,37.57,126.98,120,5,5,5,0,3,0.41
-25,Beijing,China,Asia,PEK,39.9,116.4,80,5,5,5,0,3,0.23
-26,Shanghai,China,Asia,PVG,31.23,121.47,90,5,5,5,0.5,3,0.27
-27,Hong Kong,China (SAR),Asia,HKG,22.3,114.17,130,5,5,5,1,5,0.45
-28,Singapore,Singapore,Asia,SIN,1.35,103.82,180,3,5,5,1,5,0.68
-29,Bangkok,Thailand,Asia,BKK,13.75,100.5,50,5,5,5,0.5,5,0.09
-30,Phuket,Thailand,Asia,HKT,7.88,98.39,60,1,5,3,1,5,0.14
-31,Denpasar,Indonesia,Asia,DPS,-8.65,115.22,40,3,5,5,1,5,0.05
-32,Kuala Lumpur,Malaysia,Asia,KUL,3.14,101.69,50,5,3,3,0,5,0.09
-33,Delhi,India,Asia,DEL,28.61,77.21,40,5,5,5,0,3,0.05
-34,Mumbai,India,Asia,BOM,19.08,72.88,50,5,3,5,1,5,0.09
-35,Dubai,UAE,Asia,DXB,25.2,55.27,200,5,5,5,1,5,0.77
-36,Jerusalem,Israel,Asia,TLV,31.77,35.22,100,3,5,3,0,3,0.32
-37,Male,Maldives,Asia,MLE,4.17,73.51,200,1,5,3,1,5,0.77
-38,Kathmandu,Nepal,Asia,KTM,27.71,85.32,30,3,5,3,0,3,0
-39,Hanoi,Vietnam,Asia,HAN,21.03,105.83,30,5,5,3,0,5,0
-40,Chiang Mai,Thailand,Asia,CNX,18.79,98.98,40,3,5,3,0,5,0.05
-41,Siem Reap,Cambodia,Asia,REP,13.36,103.86,30,1,5,3,0,5,0
-42,Taipei,Taiwan,Asia,TPE,25.03,121.57,100,5,3,3,0.5,5,0.32
-43,Colombo,Sri Lanka,Asia,CMB,6.93,79.85,40,5,3,3,1,5,0.05
-44,Amman,Jordan,Asia,AMM,31.95,35.93,70,3,3,3,0,3,0.18
-45,Manila,Philippines,Asia,MNL,14.6,120.98,50,5,3,3,1,5,0.09
-46,New York,USA,North America,JFK,40.71,-74.01,200,5,5,5,1,3,0.77
-47,Los Angeles,USA,North America,LAX,34.05,-118.24,150,5,5,5,1,5,0.55
-48,San Francisco,USA,North America,SFO,37.77,-122.42,180,5,5,5,1,3,0.68
-49,Las Vegas,USA,North America,LAS,36.17,-115.14,120,3,5,5,0,5,0.41
-50,Miami,USA,North America,MIA,25.77,-80.19,130,3,5,5,1,5,0.45
-51,Orlando,USA,North America,MCO,28.54,-81.38,100,3,5,5,0,5,0.32
-52,Toronto,Canada,North America,YYZ,43.65,-79.38,130,5,5,3,0,3,0.45
-53,Vancouver,Canada,North America,YVR,49.28,-123.12,120,3,5,3,1,3,0.41
-54,Mexico City,Mexico,North America,MEX,19.43,-99.13,50,5,5,3,0,3,0.09
-55,Cancun,Mexico,North America,CUN,21.16,-86.85,80,3,5,5,1,5,0.23
-56,Havana,Cuba,North America,HAV,23.11,-82.37,40,3,5,3,1,5,0.05
-57,Punta Cana,Dominican Republic,North America,PUJ,18.58,-68.4,100,1,5,5,1,5,0.32
-58,San Jose,Costa Rica,North America,SJO,9.93,-84.08,60,3,3,1,0,5,0.14
-59,Montreal,Canada,North America,YUL,45.5,-73.57,100,3,5,3,0,3,0.32
-60,Washington D.C.,USA,North America,IAD,38.9,-77.04,150,3,5,5,0,3,0.55
-61,Anchorage,USA,North America,ANC,61.22,-149.9,110,3,3,3,1,1,0.36
-62,Honolulu,USA,North America,HNL,21.31,-157.86,180,3,5,5,1,5,0.68
-63,Rio de Janeiro,Brazil,South America,GIG,-22.91,-43.17,70,5,5,5,1,5,0.18
-64,Buenos Aires,Argentina,South America,EZE,-34.6,-58.38,60,5,5,5,0.5,3,0.14
-65,Cusco,Peru,South America,CUZ,-13.53,-71.97,40,1,5,3,0,3,0.05
-66,Lima,Peru,South America,LIM,-12.05,-77.04,50,5,5,3,1,5,0.09
-67,Santiago,Chile,South America,SCL,-33.45,-70.66,70,5,5,3,0,3,0.18
-68,Cartagena,Colombia,South America,CTG,10.39,-75.48,50,3,5,3,1,5,0.09
-69,Sao Paulo,Brazil,South America,GRU,-23.55,-46.63,80,5,3,3,0,3,0.23
-70,Quito,Ecuador,South America,UIO,-0.18,-78.47,40,3,5,3,0,3,0.05
-71,La Paz,Bolivia,South America,LPB,-16.5,-68.15,30,3,3,1,0,1,0
-72,Ushuaia,Argentina,South America,USH,-54.8,-68.3,100,1,3,1,1,1,0.32
-73,Bogota,Colombia,South America,BOG,4.71,-74.07,50,5,3,3,0,3,0.09
-74,Montevideo,Uruguay,South America,MVD,-34.9,-56.16,60,3,3,3,1,3,0.14
-75,Cape Town,South Africa,Africa,CPT,-33.93,18.42,60,3,5,4,1,3,0.14
-76,Cairo,Egypt,Africa,CAI,30.04,31.24,40,5,5,5,0,5,0.05
-77,Marrakech,Morocco,Africa,RAK,31.63,-7.99,50,3,5,5,0,5,0.09
-78,Victoria Falls,Zimbabwe,Africa,VFA,-17.93,25.84,150,1,5,3,0,3,0.55
-79,Nairobi,Kenya,Africa,NBO,-1.29,36.82,50,5,4,3,0,3,0.09
-80,Zanzibar City,Tanzania,Africa,ZNZ,-6.16,39.19,80,1,5,3,1,5,0.23
-81,Lagos,Nigeria,Africa,LOS,6.45,3.39,100,5,1,1,1,5,0.32
-82,Victoria,Seychelles,Africa,SEZ,-4.62,55.45,200,1,5,1,1,5,0.77
-83,Port Louis,Mauritius,Africa,MRU,-20.16,57.5,150,3,5,3,1,5,0.55
-84,Accra,Ghana,Africa,ACC,5.6,-0.17,70,3,3,3,1,5,0.18
-85,Johannesburg,South Africa,Africa,JNB,-26.2,28.04,50,5,1,1,0,3,0.09
-86,Addis Ababa,Ethiopia,Africa,ADD,8.98,38.76,40,5,1,1,0,3,0.05
-87,Luxor,Egypt,Africa,LXR,25.69,32.64,40,3,5,3,0,5,0.05
-88,Tunis,Tunisia,Africa,TUN,36.8,10.18,50,3,3,3,1,3,0.09
-89,Sydney,Australia,Oceania,SYD,-33.87,151.21,180,5,5,5,1,5,0.68
-90,Melbourne,Australia,Oceania,MEL,-37.81,144.96,170,5,5,5,0,3,0.64
-91,Auckland,New Zealand,Oceania,AKL,-36.85,174.76,150,3,5,3,1,3,0.55
-92,Queenstown,New Zealand,Oceania,ZQN,-45.03,168.66,130,1,5,3,0,3,0.45
-93,Bora Bora,French Polynesia,Oceania,BOB,-16.5,-151.74,250,1,5,1,1,5,1
-94,Papeete,French Polynesia,Oceania,PPT,-17.53,-149.56,200,1,3,1,1,5,0.77
-95,Nadi,Fiji,Oceania,NAN,-17.76,177.44,100,1,5,3,1,5,0.32
-96,Apia,Samoa,Oceania,APW,-13.84,-171.75,60,1,3,1,1,5,0.14
-97,Christchurch,New Zealand,Oceania,CHC,-43.53,172.62,120,3,4,3,0,3,0.41
-98,Cairns,Australia,Oceania,CNS,-16.92,145.77,110,3,5,3,1,5,0.36
-99,Perth,Australia,Oceania,PER,-31.95,115.86,160,3,4,3,1,5,0.59
-100,Gold Coast,Australia,Oceania,OOL,-28.02,153.4,140,3,5,5,1,5,0.5
+id;city;country;continent;iata_code;latitude;longitude;avg_budget_per_day;city_size;tourist_rating;tourist_volume_base;is_coastal;climate_category;cost_index
+1;London;UK;Europe;LHR;51.51;-0.13;150;5;5;5;0;3;0.55
+2;Paris;France;Europe;CDG;48.86;2.35;140;5;5;5;0;3;0.5
+3;Rome;Italy;Europe;FCO;41.9;12.49;120;5;5;5;0.5;3;0.41
+4;Barcelona;Spain;Europe;BCN;41.38;2.17;110;5;5;5;1;3;0.36
+5;Berlin;Germany;Europe;BER;52.52;13.4;100;5;5;5;0;3;0.32
+6;Athens;Greece;Europe;ATH;37.98;23.72;80;3;5;5;0.5;3;0.23
+7;Moscow;Russia;Europe;SVO;55.75;37.62;70;5;5;5;0;1;0.18
+8;Istanbul;Turkey;Europe;IST;41.01;28.96;60;5;5;5;1;3;0.14
+9;Amsterdam;Netherlands;Europe;AMS;52.37;4.9;130;3;5;5;0;3;0.45
+10;Prague;Czech Republic;Europe;PRG;50.08;14.42;60;3;5;5;0;3;0.14
+11;Venice;Italy;Europe;VCE;45.44;12.33;100;3;5;5;1;3;0.32
+12;Santorini;Greece;Europe;JTR;36.4;25.43;120;1;5;3;1;3;0.41
+13;Reykjavik;Iceland;Europe;KEF;64.13;-21.9;180;3;5;3;1;1;0.68
+14;Dubrovnik;Croatia;Europe;DBV;42.65;18.09;90;1;5;3;1;3;0.27
+15;Vienna;Austria;Europe;VIE;48.21;16.37;100;3;5;5;0;3;0.32
+16;Copenhagen;Denmark;Europe;CPH;55.68;12.57;130;3;5;5;1;3;0.45
+17;Lisbon;Portugal;Europe;LIS;38.72;-9.14;90;3;5;3;1;3;0.27
+18;Budapest;Hungary;Europe;BUD;47.5;19.04;70;3;5;5;0;3;0.18
+19;Zurich;Switzerland;Europe;ZRH;47.37;8.54;200;3;3;3;0;3;0.77
+20;Stockholm;Sweden;Europe;ARN;59.33;18.07;150;3;5;3;1;1;0.55
+21;Dublin;Ireland;Europe;DUB;53.35;-6.26;100;3;3;3;0;3;0.32
+22;Bergen;Norway;Europe;BGO;60.39;5.32;160;1;5;3;1;3;0.59
+23;Tokyo;Japan;Asia;NRT;35.68;139.69;150;5;5;5;0.5;3;0.55
+24;Seoul;South Korea;Asia;ICN;37.57;126.98;120;5;5;5;0;3;0.41
+25;Beijing;China;Asia;PEK;39.9;116.4;80;5;5;5;0;3;0.23
+26;Shanghai;China;Asia;PVG;31.23;121.47;90;5;5;5;0.5;3;0.27
+27;Hong Kong;China (SAR);Asia;HKG;22.3;114.17;130;5;5;5;1;5;0.45
+28;Singapore;Singapore;Asia;SIN;1.35;103.82;180;3;5;5;1;5;0.68
+29;Bangkok;Thailand;Asia;BKK;13.75;100.5;50;5;5;5;0.5;5;0.09
+30;Phuket;Thailand;Asia;HKT;7.88;98.39;60;1;5;3;1;5;0.14
+31;Denpasar;Indonesia;Asia;DPS;-8.65;115.22;40;3;5;5;1;5;0.05
+32;Kuala Lumpur;Malaysia;Asia;KUL;3.14;101.69;50;5;3;3;0;5;0.09
+33;Delhi;India;Asia;DEL;28.61;77.21;40;5;5;5;0;3;0.05
+34;Mumbai;India;Asia;BOM;19.08;72.88;50;5;3;5;1;5;0.09
+35;Dubai;UAE;Asia;DXB;25.2;55.27;200;5;5;5;1;5;0.77
+36;Jerusalem;Israel;Asia;TLV;31.77;35.22;100;3;5;3;0;3;0.32
+37;Male;Maldives;Asia;MLE;4.17;73.51;200;1;5;3;1;5;0.77
+38;Kathmandu;Nepal;Asia;KTM;27.71;85.32;30;3;5;3;0;3;0
+39;Hanoi;Vietnam;Asia;HAN;21.03;105.83;30;5;5;3;0;5;0
+40;Chiang Mai;Thailand;Asia;CNX;18.79;98.98;40;3;5;3;0;5;0.05
+41;Siem Reap;Cambodia;Asia;REP;13.36;103.86;30;1;5;3;0;5;0
+42;Taipei;Taiwan;Asia;TPE;25.03;121.57;100;5;3;3;0.5;5;0.32
+43;Colombo;Sri Lanka;Asia;CMB;6.93;79.85;40;5;3;3;1;5;0.05
+44;Amman;Jordan;Asia;AMM;31.95;35.93;70;3;3;3;0;3;0.18
+45;Manila;Philippines;Asia;MNL;14.6;120.98;50;5;3;3;1;5;0.09
+46;New York;USA;North America;JFK;40.71;-74.01;200;5;5;5;1;3;0.77
+47;Los Angeles;USA;North America;LAX;34.05;-118.24;150;5;5;5;1;5;0.55
+48;San Francisco;USA;North America;SFO;37.77;-122.42;180;5;5;5;1;3;0.68
+49;Las Vegas;USA;North America;LAS;36.17;-115.14;120;3;5;5;0;5;0.41
+50;Miami;USA;North America;MIA;25.77;-80.19;130;3;5;5;1;5;0.45
+51;Orlando;USA;North America;MCO;28.54;-81.38;100;3;5;5;0;5;0.32
+52;Toronto;Canada;North America;YYZ;43.65;-79.38;130;5;5;3;0;3;0.45
+53;Vancouver;Canada;North America;YVR;49.28;-123.12;120;3;5;3;1;3;0.41
+54;Mexico City;Mexico;North America;MEX;19.43;-99.13;50;5;5;3;0;3;0.09
+55;Cancun;Mexico;North America;CUN;21.16;-86.85;80;3;5;5;1;5;0.23
+56;Havana;Cuba;North America;HAV;23.11;-82.37;40;3;5;3;1;5;0.05
+57;Punta Cana;Dominican Republic;North America;PUJ;18.58;-68.4;100;1;5;5;1;5;0.32
+58;San Jose;Costa Rica;North America;SJO;9.93;-84.08;60;3;3;1;0;5;0.14
+59;Montreal;Canada;North America;YUL;45.5;-73.57;100;3;5;3;0;3;0.32
+60;Washington D.C.;USA;North America;IAD;38.9;-77.04;150;3;5;5;0;3;0.55
+61;Anchorage;USA;North America;ANC;61.22;-149.9;110;3;3;3;1;1;0.36
+62;Honolulu;USA;North America;HNL;21.31;-157.86;180;3;5;5;1;5;0.68
+63;Rio de Janeiro;Brazil;South America;GIG;-22.91;-43.17;70;5;5;5;1;5;0.18
+64;Buenos Aires;Argentina;South America;EZE;-34.6;-58.38;60;5;5;5;0.5;3;0.14
+65;Cusco;Peru;South America;CUZ;-13.53;-71.97;40;1;5;3;0;3;0.05
+66;Lima;Peru;South America;LIM;-12.05;-77.04;50;5;5;3;1;5;0.09
+67;Santiago;Chile;South America;SCL;-33.45;-70.66;70;5;5;3;0;3;0.18
+68;Cartagena;Colombia;South America;CTG;10.39;-75.48;50;3;5;3;1;5;0.09
+69;Sao Paulo;Brazil;South America;GRU;-23.55;-46.63;80;5;3;3;0;3;0.23
+70;Quito;Ecuador;South America;UIO;-0.18;-78.47;40;3;5;3;0;3;0.05
+71;La Paz;Bolivia;South America;LPB;-16.5;-68.15;30;3;3;1;0;1;0
+72;Ushuaia;Argentina;South America;USH;-54.8;-68.3;100;1;3;1;1;1;0.32
+73;Bogota;Colombia;South America;BOG;4.71;-74.07;50;5;3;3;0;3;0.09
+74;Montevideo;Uruguay;South America;MVD;-34.9;-56.16;60;3;3;3;1;3;0.14
+75;Cape Town;South Africa;Africa;CPT;-33.93;18.42;60;3;5;4;1;3;0.14
+76;Cairo;Egypt;Africa;CAI;30.04;31.24;40;5;5;5;0;5;0.05
+77;Marrakech;Morocco;Africa;RAK;31.63;-7.99;50;3;5;5;0;5;0.09
+78;Victoria Falls;Zimbabwe;Africa;VFA;-17.93;25.84;150;1;5;3;0;3;0.55
+79;Nairobi;Kenya;Africa;NBO;-1.29;36.82;50;5;4;3;0;3;0.09
+80;Zanzibar City;Tanzania;Africa;ZNZ;-6.16;39.19;80;1;5;3;1;5;0.23
+81;Lagos;Nigeria;Africa;LOS;6.45;3.39;100;5;1;1;1;5;0.32
+82;Victoria;Seychelles;Africa;SEZ;-4.62;55.45;200;1;5;1;1;5;0.77
+83;Port Louis;Mauritius;Africa;MRU;-20.16;57.5;150;3;5;3;1;5;0.55
+84;Accra;Ghana;Africa;ACC;5.6;-0.17;70;3;3;3;1;5;0.18
+85;Johannesburg;South Africa;Africa;JNB;-26.2;28.04;50;5;1;1;0;3;0.09
+86;Addis Ababa;Ethiopia;Africa;ADD;8.98;38.76;40;5;1;1;0;3;0.05
+87;Luxor;Egypt;Africa;LXR;25.69;32.64;40;3;5;3;0;5;0.05
+88;Tunis;Tunisia;Africa;TUN;36.8;10.18;50;3;3;3;1;3;0.09
+89;Sydney;Australia;Oceania;SYD;-33.87;151.21;180;5;5;5;1;5;0.68
+90;Melbourne;Australia;Oceania;MEL;-37.81;144.96;170;5;5;5;0;3;0.64
+91;Auckland;New Zealand;Oceania;AKL;-36.85;174.76;150;3;5;3;1;3;0.55
+92;Queenstown;New Zealand;Oceania;ZQN;-45.03;168.66;130;1;5;3;0;3;0.45
+93;Bora Bora;French Polynesia;Oceania;BOB;-16.5;-151.74;250;1;5;1;1;5;1
+94;Papeete;French Polynesia;Oceania;PPT;-17.53;-149.56;200;1;3;1;1;5;0.77
+95;Nadi;Fiji;Oceania;NAN;-17.76;177.44;100;1;5;3;1;5;0.32
+96;Apia;Samoa;Oceania;APW;-13.84;-171.75;60;1;3;1;1;5;0.14
+97;Christchurch;New Zealand;Oceania;CHC;-43.53;172.62;120;3;4;3;0;3;0.41
+98;Cairns;Australia;Oceania;CNS;-16.92;145.77;110;3;5;3;1;5;0.36
+99;Perth;Australia;Oceania;PER;-31.95;115.86;160;3;4;3;1;5;0.59
+100;Gold Coast;Australia;Oceania;OOL;-28.02;153.4;140;3;5;5;1;5;0.5

@@ -30,7 +30,7 @@ def create_table(cur):
 
 def load_csv():
     with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
+        reader = csv.DictReader(csvfile, delimiter=';')
         return [
             (
                 int(r["id"]),
@@ -66,6 +66,7 @@ def create_db():
         return
     
     destinations = load_csv()
+    print(destinations[:3])
 
     if not destinations:
         print("CSV failed to be loaded")
