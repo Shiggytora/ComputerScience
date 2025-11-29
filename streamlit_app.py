@@ -46,7 +46,7 @@ if st.button("Weather for Barcelona"):
         st.caption(f"Data from {weather['time']}")
 
 
-ROUNDS = 3
+ROUNDS = 3 
 
 if "state" not in st.session_state:
     st.session_state.state = "Start"
@@ -61,16 +61,16 @@ if st.session_state.state == "Start":
 
     total_budget = st.number_input(
         "Total budget (CHF)",
-        min_value=100,
-        max_value=10000,
-        value=2000,
+        min_value = 100,
+        max_value = 10000,
+        value = 2000,
     )
 
     trip_days = st.number_input(
-        "Trip length (in days)",
-        min_value=1,
-        max_value=60,
-        value=7
+        "Trip lenght (in days)",
+        min_value = 1,
+        max_value = 60,
+        value = 7
     )
 
     if st.button("Start Matching"):
@@ -79,7 +79,7 @@ if st.session_state.state == "Start":
         st.session_state.chosen = []
         st.session_state.round = 0
         st.session_state.state = "Matching"
-        st.rerun()
+        st.experimental_rerun()
 
 elif st.session_state.state == "Matching":
 
@@ -94,15 +94,13 @@ elif st.session_state.state == "Matching":
     if not locations:
         st.error("No destinations left. Please restart")
         st.session_state.state = "Start"
-        st.rerun()
+        st.experimental_rerun()
 
     ids = [y["id"] for y in locations]
 
     choice = st.radio(
         "Choose one destination",
         options=ids,
-        index=None,
-        key="destination_choice",
         format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
     )
 
@@ -110,24 +108,14 @@ elif st.session_state.state == "Matching":
         st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
 
     if st.button("Confirm choice"):
-        if choice is None:
-            st.warning("Please select a destination before confirming.")
-        
-        else:
-            picked = next(y for y in locations if y["id"] == choice)
-            st.session_state.chosen.append(picked)
-            st.session_state.id_used.extend(ids)
-            st.session_state.round += 1
+        picked = next(y for y in locations if y["id"] == choice)
+        st.session_state.chosen.append(picked)
+        st.session_state.id_used.extend(ids)
+        st.session_state.round += 1
 
-            if st.session_state.round >= ROUNDS:
-                st.session_state.state = "Results"
-    
-            else: 
-                st.session_state.state = "Matching"
-            
-            st.session_state.current_choice = None
-            st.rerun()
-        
+        if st.session_state.round >= ROUNDS:
+            st.session_state.state = "Results"
+        st.experimental_rerun()
 
 elif st.session_state.state == "Results":
     st.subheader("Your final recommendation")
@@ -144,4 +132,4 @@ elif st.session_state.state == "Results":
 
     if st.button("Restart"):
         st.session_state.state = "Start"
-        st.rerun()
+        st.experimental_rerun()
