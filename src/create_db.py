@@ -36,6 +36,7 @@ def load_csv():
                 int(r["id"]),
                 r["city"],
                 r["country"],
+                r["continent"],
                 r["iata_code"],
                 float(r["latitude"]),
                 float(r["longitude"]),
