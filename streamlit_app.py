@@ -169,14 +169,14 @@ def render_destination_card(loc: Dict[str, Any], index: int):
             # Flugpreis anzeigen
             flight = loc. get('flight_price')
             if flight:
-                st.metric("✈️ Flight", f"{flight}")
+                st.metric("✈️ Flight (Two-way in CHF)", f"{flight}")
             else:
                 st.metric("✈️ Flight", "N/A")
         
         with col4:
             # Tagesbudget anzeigen
             daily = loc.get('avg_budget_per_day', 0)
-            st.metric("📅 /Day", f"{int(daily)}")
+            st.metric("📅 /Day (CHF)", f"{int(daily)}")
         
         st.divider()
 
