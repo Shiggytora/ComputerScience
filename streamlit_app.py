@@ -33,7 +33,7 @@ def initialize_session_state():
         "round": 0,
         "total_budget": DEFAULT_BUDGET,
         "trip_days": DEFAULT_DAYS,
-        "current_locations": [],
+        "current_locations": [],   
         "pending_choice": None,  
     }
     for key, value in defaults.items():
@@ -95,11 +95,11 @@ def render_destination_card(loc: Dict[str, Any], index: int):
         
         with col1:
             st.markdown(f"### {loc['city']}")
-            st. caption(f"{loc['country']}")
+            st. caption(f"📍 {loc['country']}")
         
         with col2:
             rating = loc.get('tourist_rating', 'N/A')
-            st.metric("Rating", f"{rating}")
+            st.metric("Rating", f"⭐ {rating}")
         
         with col3:
             if 'avg_budget_per_day' in loc:
@@ -117,18 +117,18 @@ def render_progress_bar():
     
     remaining = ROUNDS - current_round
     if remaining > 0:
-        st.info(f"Noch {remaining} Runde{'n' if remaining > 1 else ''} bis zu deiner Empfehlung!")
+        st.info(f"🎯 Noch {remaining} Runde{'n' if remaining > 1 else ''} bis zu deiner Empfehlung!")
 
 
 def render_start_page():
     """Rendert die Startseite."""
-    st.subheader("Plan your trip")
+    st.subheader("🌍 Plan your trip")
     
     col1, col2 = st.columns(2)
 
     with col1:
         total_budget = st. number_input(
-            "Total Budget (CHF)",
+            "💰 Total Budget (CHF)",
             min_value=MIN_BUDGET,
             max_value=MAX_BUDGET,
             value=st.session_state. total_budget,
@@ -138,7 +138,7 @@ def render_start_page():
 
     with col2:
         trip_days = st. number_input(
-            "Trip Length (days)",
+            "📅 Trip Length (days)",
             min_value=MIN_DAYS,
             max_value=MAX_DAYS,
             value=st.session_state. trip_days,
@@ -147,16 +147,16 @@ def render_start_page():
     
     if trip_days > 0:
         budget_per_day = total_budget / trip_days
-        st.info(f"Budget per day: **CHF {budget_per_day:.2f}**")
+        st.info(f"💵 Budget per day: **CHF {budget_per_day:.2f}**")
     
     st. divider()
-
-    if st.button("Start Matching", type="primary", use_container_width=True):
+    
+    if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
             matches = filter_by_budget(total_budget, trip_days)
             
             if not matches:
-                st.error("No destinations found within your budget.  Try adjusting your parameters.")
+                st.error("❌ No destinations found within your budget.  Try adjusting your parameters.")
             else:
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
@@ -165,7 +165,7 @@ def render_start_page():
                 st.session_state.chosen = []
                 st.session_state.round = 0
                 st.session_state.state = "Matching"
-                st.success(f"Found {len(matches)} destinations!")
+                st.success(f"✅ Found {len(matches)} destinations!")
                 st.rerun()
 
 
@@ -174,13 +174,13 @@ def render_matching_page():
     render_progress_bar()
     
     current_display_round = st. session_state.round + 1
-    st.subheader(f"Round {current_display_round} of {ROUNDS}")
+    st.subheader(f"🎲 Round {current_display_round} of {ROUNDS}")
     st.write("Select the destination that appeals to you most:")
     
     locations = get_current_round_locations()
     
     if not locations:
-        st.warning("No more destinations available.  Proceeding to results...")
+        st.warning("⚠️ No more destinations available.  Proceeding to results...")
         st.session_state.state = "Results"
         st.rerun()
         return
@@ -193,7 +193,7 @@ def render_matching_page():
     ids = [loc["id"] for loc in locations]
     
     choice = st.radio(
-        "**Your choice:**",
+        "**🎯 Your choice:**",
         options=ids,
         index=None,
         key=f"round_{st.session_state.round}_choice",
@@ -201,7 +201,7 @@ def render_matching_page():
             f"{loc['city']}, {loc['country']}" 
             for loc in locations if loc["id"] == _id
         ),
-        horizontal=True,
+        horizontal=True, 
     )
     
     st.divider()
@@ -209,19 +209,19 @@ def render_matching_page():
     if choice is not None:
         selected = next((loc for loc in locations if loc["id"] == choice), None)
         if selected:
-            st. success(f"Selected: **{selected['city']}, {selected['country']}**")
+            st. success(f"✅ Selected: **{selected['city']}, {selected['country']}**")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button(
-                f"Confirm & Go to Round {current_display_round + 1}" if current_display_round < ROUNDS else "Confirm & See Results",
+                f"✓ Confirm & Go to Round {current_display_round + 1}" if current_display_round < ROUNDS else "✓ Confirm & See Results",
                 type="primary", 
                 use_container_width=True
             ):
                 if process_selection(choice, locations):
                     st.rerun()
     else:
-        st.warning("Please select a destination above to continue")
+        st.warning("👆 Please select a destination above to continue")
     
     st.divider()
     if st.button("← Start Over", use_container_width=False):
@@ -232,7 +232,7 @@ def render_matching_page():
 def render_results_page():
     """Rendert die Ergebnisseite."""
     st.balloons()
-    st.subheader("Your Perfect Destination!")
+    st.subheader("🎉 Your Perfect Destination!")
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -243,24 +243,24 @@ def render_results_page():
     if ranked:
         best = ranked[0]
         
-        st.success(f"### {best['city']}, {best['country']}")
+        st.success(f"### 🏆 {best['city']}, {best['country']}")
         st.write("Based on your preferences, this is your ideal destination!")
         
         st.divider()
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Tourist Rating", f"{best. get('tourist_rating', 'N/A')}")
+            st.metric("Tourist Rating", f"⭐ {best. get('tourist_rating', 'N/A')}")
         with col2:
-            st.metric("Match Score", f"{best.get('match_score', 'N/A')}")
+            st.metric("Match Score", f"🎯 {best.get('match_score', 'N/A')}")
         with col3:
             if 'avg_budget_per_day' in best:
                 total_cost = best['avg_budget_per_day'] * st.session_state.trip_days
-                st. metric("Estimated Total", f"CHF {total_cost:.2f}")
+                st. metric("Estimated Total", f"💰 CHF {total_cost:.2f}")
         
         st.divider()
         
-        with st.expander("Your selections during matching"):
+        with st.expander("📋 Your selections during matching"):
             for i, chosen in enumerate(st. session_state.chosen, 1):
                 st.write(f"**Round {i}:** {chosen['city']}, {chosen['country']}")
         
@@ -268,7 +268,7 @@ def render_results_page():
             st.json(best)
         
         if len(ranked) > 1:
-            st.subheader("Other Great Options:")
+            st.subheader("🥈 Other Great Options:")
             for i, dest in enumerate(ranked[1:4], 2):
                 col1, col2 = st.columns([3, 1])
                 with col1:
@@ -278,7 +278,7 @@ def render_results_page():
         
         st.divider()
     else:
-        st.error("Unable to generate recommendations. Please try again.")
+        st.error("❌ Unable to generate recommendations. Please try again.")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -287,18 +287,18 @@ def render_results_page():
             st.rerun()
     
     with col2:
-        if st. button("Save Results", use_container_width=True):
-            st.info("In progress")
+        if st. button("💾 Save Results", use_container_width=True):
+            st.info("🚧 Feature in progress...")
 
 
 def main():
     initialize_session_state()
     
-    st.title("Travel Matching")
+    st.title("✈️ Travel Matching")
     st.write("Welcome to our travel matching application!")
     
     with st.sidebar:
-        st. subheader("Debug Info")
+        st. subheader("🔧 Debug Info")
         st. write(f"State: {st.session_state.state}")
         st.write(f"Round: {st.session_state.round}")
         st.write(f"Chosen: {len(st.session_state.chosen)}")
