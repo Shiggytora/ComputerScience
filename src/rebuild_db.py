@@ -9,7 +9,7 @@ from pathlib import Path
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "data" / "travel. db"
+DB_PATH = BASE_DIR / "data" / "travel.db"
 CSV_PATH = BASE_DIR / "data" / "destinations.csv"
 
 def rebuild_database():
