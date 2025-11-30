@@ -7,7 +7,7 @@ from src.matching import test_matching, filter_by_budget, test_locations, rankin
 from src.machinelearning import test_ml
 from src.visuals import test_visuals
 
-ROUNDS = 3
+ROUNDS = 7
 MIN_BUDGET = 100
 MAX_BUDGET = 10000
 DEFAULT_BUDGET = 2000
