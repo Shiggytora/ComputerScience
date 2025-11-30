@@ -35,6 +35,7 @@ from src.matching import (
     FEATURE_WEIGHTS,
     TRAVEL_STYLES,
 )
+
 from src.weather_matching import enrich_destinations_with_weather
 from src.insights import generate_preference_insights
 from src.session_manager import export_session, get_export_filename

@@ -17,6 +17,8 @@ import random
 from typing import List, Dict, Any, Optional
 from src.data import get_destinations_by_budget, get_all_destinations
 
+
+
 # =============================================================================
 # FEATURE CONFIGURATION
 # =============================================================================
@@ -53,6 +55,10 @@ DEFAULT_WEIGHTS = {
     "romance": 1.0,
     "family": 1.0,
 }
+
+# Aliases for backward compatibility
+NUMERIC_FEATURES = MATCHING_FEATURES
+FEATURE_WEIGHTS = DEFAULT_WEIGHTS
 
 # =============================================================================
 # TRAVEL STYLES
