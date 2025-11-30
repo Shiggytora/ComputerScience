@@ -155,7 +155,7 @@ def fetch_all_flight_prices():
         time.sleep(0.5)
     
     # Save to CSV
-    output_file = "data/flight_prices. csv"
+    output_file = "data/flight_prices.csv"
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv. DictWriter(f, fieldnames=["id", "city", "iata", "price"], delimiter=';')
         writer.writeheader()

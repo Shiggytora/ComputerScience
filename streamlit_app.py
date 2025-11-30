@@ -1,9 +1,5 @@
 """
 Travel Matching Application - Main Streamlit Application
-
-This is the main entry point for the Travel Matching Recommender application. 
-It provides an interactive interface for users to find their ideal travel destination
-based on budget, preferences, and travel style. 
 """
 
 import streamlit as st
@@ -32,8 +28,8 @@ from src.session_manager import export_session, get_export_filename
 
 ROUNDS = 7
 MIN_BUDGET = 100
-MAX_BUDGET = 10000
-DEFAULT_BUDGET = 2000
+MAX_BUDGET = 15000  # Erhöht für Flugkosten
+DEFAULT_BUDGET = 3000  # Erhöht für Flugkosten
 MIN_DAYS = 1
 MAX_DAYS = 60
 DEFAULT_DAYS = 7
@@ -52,9 +48,7 @@ st.set_page_config(
 # =============================================================================
 
 def initialize_session_state():
-    """
-    Initializes all session state variables with default values.
-    """
+    """Initializes all session state variables with default values."""
     defaults = {
         "state": "Start",
         "budget_matches": [],
@@ -85,9 +79,7 @@ def reset_session_state():
 # =============================================================================
 
 def get_current_round_locations() -> List[Dict[str, Any]]:
-    """
-    Gets destinations for the current matching round.
-    """
+    """Gets destinations for the current matching round."""
     round_key = f"locations_round_{st.session_state.round}"
     
     if round_key not in st.session_state or not st.session_state[round_key]:
@@ -102,13 +94,11 @@ def get_current_round_locations() -> List[Dict[str, Any]]:
 
 
 def process_selection(choice_id: int, locations: List[Dict[str, Any]]) -> bool:
-    """
-    Processes the user's destination selection. 
-    """
+    """Processes the user's destination selection."""
     picked = next((loc for loc in locations if loc["id"] == choice_id), None)
     
     if picked is None:
-        st.error("Selected destination not found. Please try again.")
+        st.error("Selected destination not found.  Please try again.")
         return False
     
     st.session_state.chosen.append(picked)
@@ -159,28 +149,37 @@ def get_score_label(score: float) -> str:
 
 
 def render_destination_card(loc: Dict[str, Any], index: int):
-    """
-    Renders a destination card with key information.
-    """
+    """Renders a destination card with flight price."""
     with st.container():
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
         
         with col1:
             st.markdown(f"### {loc['city']}")
             st.caption(f"📍 {loc['country']}")
             
             if 'current_temp' in loc and loc['current_temp'] is not None:
-                temp = loc['current_temp']
-                st.caption(f"🌡️ Currently: {temp}°C")
+                st.caption(f"🌡️ {loc['current_temp']}°C")
         
         with col2:
             safety = loc.get('safety', 'N/A')
             st.metric("Safety", f"🛡️ {safety}/5")
         
         with col3:
-            if 'avg_budget_per_day' in loc:
-                budget_value = int(loc['avg_budget_per_day'])
-                st.metric("Daily Budget", f"CHF {budget_value}")
+            # Flugpreis anzeigen
+            flight = loc.get('flight_price')
+            if flight:
+                st.metric("✈️ Flight", f"CHF {flight}")
+            else:
+                st.metric("✈️ Flight", "N/A")
+        
+        with col4:
+            # Gesamtkosten anzeigen
+            total = loc.get('total_trip_cost')
+            if total:
+                st.metric("💰 Total", f"CHF {int(total)}")
+            else:
+                daily = loc.get('avg_budget_per_day', 0)
+                st.metric("📅 /Day", f"CHF {int(daily)}")
         
         st.divider()
 
@@ -199,9 +198,7 @@ def render_progress_bar():
 
 
 def render_match_score_display(score: float, label: str = "Match Score"):
-    """
-    Renders a visual match score display.
-    """
+    """Renders a visual match score display."""
     color = get_score_color(score)
     score_label = get_score_label(score)
     
@@ -211,9 +208,7 @@ def render_match_score_display(score: float, label: str = "Match Score"):
 
 
 def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
-    """
-    Renders detailed breakdown of match score by feature.
-    """
+    """Renders detailed breakdown of match score by feature."""
     feature_names = {
         "safety": "🛡️ Safety",
         "english_level": "🗣️ English Friendly",
@@ -263,9 +258,7 @@ def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
 
 
 def render_insights(insights: Dict[str, Any]):
-    """
-    Renders user preference insights.
-    """
+    """Renders user preference insights."""
     if not insights:
         return
     
@@ -312,9 +305,7 @@ def render_insights(insights: Dict[str, Any]):
 # =============================================================================
 
 def render_start_page():
-    """
-    Renders the start/configuration page.
-    """
+    """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
     col1, col2 = st.columns(2)
@@ -323,9 +314,9 @@ def render_start_page():
             "💰 Total Budget (CHF)",
             min_value=MIN_BUDGET,
             max_value=MAX_BUDGET,
-            value=st.session_state. total_budget,
+            value=st.session_state.total_budget,
             step=100,
-            help="Enter your total travel budget in Swiss Francs"
+            help="Enter your total travel budget including flights"
         )
     with col2:
         trip_days = st.number_input(
@@ -337,18 +328,15 @@ def render_start_page():
         )
     
     if trip_days > 0:
-        budget_per_day = total_budget / trip_days
-        budget_display = round(budget_per_day, 2)
-        st.info(f"💵 Budget per day: **CHF {budget_display}**")
+        st.info(f"💵 Total budget: **CHF {total_budget}** for **{trip_days} days** (including flights)")
     
     st.divider()
     
-    st.subheader("🎨 What's Your Travel Style? ")
+    st.subheader("🎨 What's Your Travel Style?")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
     
-    # Create 2 rows of 5 buttons for better display
     row1_styles = style_options[:5]
     row2_styles = style_options[5:]
     
@@ -420,7 +408,7 @@ def render_start_page():
             matches = filter_by_budget(total_budget, trip_days)
             
             if not matches:
-                st.error("❌ No destinations found within your budget.  Try adjusting your parameters.")
+                st.error("❌ No destinations found within your budget.  Try increasing your budget.")
             else:
                 if use_weather:
                     matches = enrich_destinations_with_weather(
@@ -441,9 +429,7 @@ def render_start_page():
 
 
 def render_matching_page():
-    """
-    Renders the interactive matching page.
-    """
+    """Renders the interactive matching page."""
     render_progress_bar()
     
     current_style = st.session_state.get("travel_style", "balanced")
@@ -508,14 +494,13 @@ def render_matching_page():
 
 
 def render_results_page():
-    """
-    Renders the results page with recommendations.
-    """
+    """Renders the results page with recommendations."""
     st.balloons()
     st.subheader("🎉 Your Perfect Destination!")
     
     travel_style = st.session_state.get("travel_style", "balanced")
     use_weather = st.session_state.get("use_weather", True)
+    trip_days = st.session_state.get("trip_days", 7)
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -537,6 +522,7 @@ def render_results_page():
         
         st.divider()
         
+        # Score Display
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -557,13 +543,36 @@ def render_results_page():
             safety = best.get('safety', 'N/A')
             st.metric("Safety Rating", f"🛡️ {safety}/5")
             
-            if 'avg_budget_per_day' in best:
-                total_cost = best['avg_budget_per_day'] * st.session_state.trip_days
-                total_cost_rounded = round(total_cost, 2)
-                st.metric("Estimated Total", f"💰 CHF {total_cost_rounded}")
-            
             if 'current_temp' in best and best['current_temp'] is not None:
                 st.metric("Current Weather", f"🌡️ {best['current_temp']}°C")
+        
+        st.divider()
+        
+        # === NEU: Kostenaufschlüsselung ===
+        st.subheader("💰 Cost Breakdown")
+        
+        flight_price = best.get('flight_price') or 0
+        daily_budget = best.get('avg_budget_per_day') or 0
+        accommodation_food = daily_budget * trip_days
+        total_cost = flight_price + accommodation_food
+        
+        cost_col1, cost_col2, cost_col3, cost_col4 = st.columns(4)
+        
+        with cost_col1:
+            st.metric("✈️ Flight (round-trip)", f"CHF {flight_price}")
+        
+        with cost_col2:
+            st.metric(f"🏨 {trip_days} Days × CHF {daily_budget}", f"CHF {int(accommodation_food)}")
+        
+        with cost_col3:
+            st.metric("💵 Total Trip Cost", f"CHF {int(total_cost)}")
+        
+        with cost_col4:
+            remaining = st.session_state.total_budget - total_cost
+            if remaining >= 0:
+                st.metric("💚 Budget Remaining", f"CHF {int(remaining)}")
+            else:
+                st.metric("🔴 Over Budget", f"CHF {int(abs(remaining))}")
         
         st.divider()
         
@@ -586,6 +595,7 @@ def render_results_page():
         with st.expander("🔍 Full Destination Details"):
             st.json(best)
         
+        # Other Great Options mit Flugpreisen
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
@@ -593,22 +603,19 @@ def render_results_page():
             for i, dest in enumerate(ranked[1:6], 2):
                 combined = dest.get('combined_score', 0)
                 match = dest.get('match_score', 0)
-                weather = dest.get('weather_score', 50)
+                flight = dest.get('flight_price') or 0
+                total = dest.get('total_trip_cost') or 0
                 color = get_score_color(combined)
                 
                 col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
-                    st.write(f"**{i}.** {dest['city']}, {dest['country']}")
+                    st.write(f"**{i}. ** {dest['city']}, {dest['country']}")
                 with col2:
                     st.write(f"{color} {combined}%")
                 with col3:
-                    st.caption(f"🎯 {match}%")
+                    st.caption(f"✈️ CHF {flight}")
                 with col4:
-                    if use_weather:
-                        st.caption(f"🌤️ {weather}%")
-                    else:
-                        safety_val = dest.get('safety', 'N/A')
-                        st.caption(f"🛡️ {safety_val}")
+                    st.caption(f"💰 CHF {int(total)}")
         
         st.divider()
         
@@ -644,9 +651,7 @@ def render_results_page():
 # =============================================================================
 
 def main():
-    """
-    Main application entry point. 
-    """
+    """Main application entry point."""
     initialize_session_state()
     
     st.title("✈️ Travel Matching")
