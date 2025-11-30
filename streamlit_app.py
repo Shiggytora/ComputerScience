@@ -141,6 +141,8 @@ def main():
                     
                     if st.session_state.round >= ROUNDS:
                         st.session_state.state = "Results"
+                    else:
+                        st.session_state.state = "Matching"
                     
                     st.rerun()
         else:
