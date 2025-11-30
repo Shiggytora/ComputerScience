@@ -102,14 +102,14 @@ elif st.session_state.state == "Matching":
         "Choose one destination",
         options=ids,
         index=None,
-        key="destination_choice",
+        key=f"round_{st.session_state.round}_choice",
         format_func=lambda _id: next(y["city"] for y in locations if y["id"] == _id),
     )
 
     for y in locations:
         st.write(f"**{y['city']}** ({y['country']}) - Rating: {y['tourist_rating']}")
 
-    if st.button("Confirm choice"):
+    if choice is not None:
         picked = next(y for y in locations if y["id"] == choice)
         st.session_state.chosen.append(picked)
         st.session_state.id_used.extend(ids)
@@ -117,7 +117,8 @@ elif st.session_state.state == "Matching":
 
         if st.session_state.round >= ROUNDS:
             st.session_state.state = "Results"
-        st.rerun()
+        else:
+            del st.session_state[f"round_{st.session_state.round - 1}_choice"]
 
 elif st.session_state.state == "Results":
     st.subheader("Your final recommendation")
