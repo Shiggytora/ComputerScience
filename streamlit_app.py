@@ -261,17 +261,21 @@ def render_match_score_display(score: float, label: str = "Match Score"):
 def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
     """
     Renders detailed breakdown of match score by feature.
-    
-    Shows how each feature contributed to the final score. 
     """
-    # Feature name translations
+    # Human-readable feature names
     feature_names = {
-        "city_size": "🏙️ City Size",
-        "tourist_rating": "⭐ Tourist Rating",
-        "tourist_volume_base": "👥 Tourist Volume",
-        "is_coastal": "🏖️ Coastal Location",
-        "climate_category": "🌡️ Climate",
-        "cost_index": "💰 Cost Index",
+        "safety": "🛡️ Safety",
+        "english_level": "🗣️ English Friendly",
+        "crowds": "👥 Crowd Level",
+        "beach": "🏖️ Beach",
+        "culture": "🏛️ Culture & History",
+        "nature": "🌿 Nature",
+        "food": "🍽️ Food & Cuisine",
+        "nightlife": "🌙 Nightlife",
+        "adventure": "🏔️ Adventure",
+        "romance": "💕 Romance",
+        "family": "👨‍👩‍👧‍👦 Family Friendly",
+        "avg_budget_per_day": "💰 Budget",
     }
     
     for feature, data in breakdown.items():
@@ -281,61 +285,74 @@ def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
         is_inverse = data. get('is_inverse', False)
         
         col1, col2, col3 = st.columns([2, 1, 1])
+        
         with col1:
             label = name
             if is_inverse:
-                label += " (inverse)"
-            st.write(f"{label}")
+                label += " ↓"
+            st. write(f"{label}")
+        
         with col2:
-            st.write(f"{color} {similarity}%")
+            st. write(f"{color} {similarity}%")
+        
         with col3:
-            weight = data['weight']
-            if abs(weight) > 2.0:
+            weight = abs(data['weight'])
+            if weight >= 2.5:
                 st.caption("⬆️ Very Important")
-            elif abs(weight) > 1.5:
-                st. caption("⬆️ Important")
-            elif abs(weight) > 1.0:
+            elif weight >= 1.5:
+                st.caption("⬆️ Important")
+            elif weight >= 1.0:
                 st.caption("➡️ Medium")
             else:
-                st.caption("⬇️ Less Important")
+                st. caption("⬇️ Less Important")
 
 
 def render_insights(insights: Dict[str, Any]):
     """
-    Renders user preference insights.
-    
-    Shows patterns detected from user's choices. 
+    Renders user preference insights. 
     """
     if not insights:
         return
     
-    st.subheader("🔍 What We Learned About You")
+    st. subheader("🔍 What We Learned About You")
     
     # Display detected patterns
     if insights.get("patterns"):
         for pattern in insights["patterns"]:
             st.write(pattern)
     else:
-        st. write("Not enough data yet to detect patterns.")
+        st. write("Complete more rounds to discover your travel preferences!")
     
     # Display preference metrics
     if insights. get("preferences"):
         st.write("**Your Average Preferences:**")
         
         prefs = insights["preferences"]
+        
         labels = {
-            "city_size": "🏙️ City Size",
-            "tourist_rating": "⭐ Rating",
-            "is_coastal": "🏖️ Coastal",
-            "cost_index": "💰 Cost",
-            "climate_category": "🌡️ Climate",
+            "safety": "🛡️ Safety",
+            "beach": "🏖️ Beach",
+            "culture": "🏛️ Culture",
+            "nature": "🌿 Nature",
+            "food": "🍽️ Food",
+            "nightlife": "🌙 Nightlife",
+            "adventure": "🏔️ Adventure",
+            "romance": "💕 Romance",
+            "family": "👨‍👩‍👧‍👦 Family",
         }
         
-        cols = st.columns(min(len(prefs), 5))
-        for i, (key, value) in enumerate(list(prefs.items())[:5]):
-            with cols[i]:
-                label = labels.get(key, key)
-                st.metric(label, f"{value:.2f}")
+        # Filter to show only main preferences
+        display_prefs = {k: v for k, v in prefs.items() if k in labels}
+        
+        if display_prefs:
+            num_cols = min(len(display_prefs), 5)
+            cols = st.columns(num_cols)
+            
+            for i, (key, value) in enumerate(list(display_prefs.items())[:5]):
+                with cols[i]:
+                    label = labels.get(key, key)
+                    value_rounded = round(value, 1)
+                    st.metric(label, str(value_rounded))
 
 
 # =============================================================================

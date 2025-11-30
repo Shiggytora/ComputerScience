@@ -1,48 +1,63 @@
 """
-Matching Module - Core recommendation engine for travel destinations.
+Matching Module - Core Recommendation Engine
 
 This module implements the matching algorithm that learns user preferences
 from their choices and calculates compatibility scores for all destinations.
-It uses weighted feature similarity to rank destinations. 
 
-Part of Requirement #5: Machine Learning - Preference learning and similarity scoring.
-Part of Requirement #4: User Interaction - Interactive matching process.
+The algorithm uses:
+1.  Preference learning from user selections
+2. Weighted feature similarity scoring
+3. Travel style adjustments
+4. Weather integration (optional)
+
+Part of Requirement #5: Machine Learning Implementation
 """
 
-import streamlit as st
-import requests
 import random
-from amadeus import Client, ResponseError
 from typing import List, Dict, Any, Optional
 from src.data import get_destinations_by_budget, get_all_destinations
-from src.config import get_secret
 
-# API Configuration
-OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
+# =============================================================================
+# FEATURE CONFIGURATION
+# =============================================================================
 
-# Features used for matching algorithm
-NUMERIC_FEATURES = [
-    "city_size",
-    "tourist_rating",
-    "tourist_volume_base",
-    "is_coastal",
-    "climate_category",
-    "cost_index",
+# All numeric features used in the matching algorithm
+MATCHING_FEATURES = [
+    "safety",
+    "english_level",
+    "crowds",
+    "beach",
+    "culture",
+    "nature",
+    "food",
+    "nightlife",
+    "adventure",
+    "romance",
+    "family",
 ]
 
-# Default feature weights for balanced matching
-FEATURE_WEIGHTS = {
-    "city_size": 1.0,
-    "tourist_rating": 2.0,
-    "tourist_volume_base": 1.0,
-    "is_coastal": 1.5,
-    "climate_category": 1.5,
-    "cost_index": 1.0,
+# Features where lower values are sometimes preferred
+INVERTIBLE_FEATURES = ["crowds", "avg_budget_per_day"]
+
+# Default weights for balanced matching
+DEFAULT_WEIGHTS = {
+    "safety": 2.0,
+    "english_level": 1.0,
+    "crowds": 1.0,
+    "beach": 1.0,
+    "culture": 1.0,
+    "nature": 1.0,
+    "food": 1.0,
+    "nightlife": 1.0,
+    "adventure": 1.0,
+    "romance": 1.0,
+    "family": 1.0,
 }
 
-# Travel style configurations with custom weights
-# Each style adjusts feature importance to match user preferences
-# Negative weights indicate inverse preference (e.g., lower is better)
+# =============================================================================
+# TRAVEL STYLES
+# =============================================================================
+
 TRAVEL_STYLES = {
     "beach_relaxation": {
         "name": "🏖️ Beach & Relaxation",
@@ -53,7 +68,12 @@ TRAVEL_STYLES = {
             "crowds": -1.5,
             "nature": 1.5,
             "romance": 1.0,
+            "food": 1.0,
             "nightlife": 0.5,
+            "culture": 0.5,
+            "adventure": 0.5,
+            "english_level": 1.0,
+            "family": 1.0,
         }
     },
     "culture_history": {
@@ -63,8 +83,14 @@ TRAVEL_STYLES = {
             "culture": 3.0,
             "food": 2.0,
             "safety": 1.5,
-            "english_level": 1.0,
-            "nature": 0.5,
+            "english_level": 1.5,
+            "nature": 1.0,
+            "romance": 1.0,
+            "crowds": -0.5,
+            "beach": 0.5,
+            "nightlife": 0.5,
+            "adventure": 0.5,
+            "family": 1.0,
         }
     },
     "adventure_nature": {
@@ -74,8 +100,14 @@ TRAVEL_STYLES = {
             "adventure": 3.0,
             "nature": 3.0,
             "crowds": -2.0,
-            "safety": 1.5,
+            "safety": 2.0,
             "culture": 0.5,
+            "beach": 0.5,
+            "food": 1.0,
+            "english_level": 1.0,
+            "nightlife": 0.0,
+            "romance": 1.0,
+            "family": 1.0,
         }
     },
     "foodie": {
@@ -87,6 +119,12 @@ TRAVEL_STYLES = {
             "safety": 1.5,
             "english_level": 1.0,
             "nightlife": 1.0,
+            "crowds": -0.5,
+            "beach": 0.5,
+            "nature": 1.0,
+            "adventure": 0.5,
+            "romance": 1.5,
+            "family": 1.0,
         }
     },
     "party_nightlife": {
@@ -96,8 +134,14 @@ TRAVEL_STYLES = {
             "nightlife": 3.0,
             "beach": 1.5,
             "safety": 1.5,
-            "english_level": 1.5,
-            "food": 1.0,
+            "english_level": 2.0,
+            "food": 1.5,
+            "crowds": 0.5,
+            "culture": 0.5,
+            "nature": 0.5,
+            "adventure": 1.0,
+            "romance": 1.0,
+            "family": -1.0,
         }
     },
     "romantic_getaway": {
@@ -107,9 +151,14 @@ TRAVEL_STYLES = {
             "romance": 3.0,
             "safety": 2.5,
             "food": 2.0,
-            "beach": 1.5,
-            "crowds": -1.5,
-            "nature": 1.5,
+            "beach": 2.0,
+            "crowds": -2.0,
+            "nature": 2.0,
+            "culture": 1.5,
+            "nightlife": 1.0,
+            "english_level": 1.0,
+            "adventure": 1.0,
+            "family": -1.0,
         }
     },
     "family_vacation": {
@@ -121,7 +170,12 @@ TRAVEL_STYLES = {
             "english_level": 2.0,
             "beach": 1.5,
             "nature": 1.5,
-            "nightlife": -1.0,
+            "culture": 1.0,
+            "food": 1.0,
+            "adventure": 1.0,
+            "nightlife": -1.5,
+            "crowds": -0.5,
+            "romance": 0.0,
         }
     },
     "budget_backpacker": {
@@ -130,9 +184,16 @@ TRAVEL_STYLES = {
         "weights": {
             "avg_budget_per_day": -3.0,
             "safety": 2.0,
+            "english_level": 1.5,
             "culture": 1.5,
             "food": 1.5,
-            "adventure": 1.0,
+            "adventure": 1.5,
+            "nature": 1.0,
+            "crowds": -0.5,
+            "beach": 1.0,
+            "nightlife": 1.0,
+            "romance": 0.5,
+            "family": 0.5,
         }
     },
     "hidden_gems": {
@@ -143,7 +204,13 @@ TRAVEL_STYLES = {
             "nature": 2.0,
             "culture": 1.5,
             "adventure": 1.5,
-            "safety": 1.0,
+            "safety": 1.5,
+            "food": 1.0,
+            "english_level": 0.5,
+            "beach": 1.0,
+            "nightlife": 0.0,
+            "romance": 1.5,
+            "family": 1.0,
         }
     },
     "balanced": {
@@ -151,22 +218,28 @@ TRAVEL_STYLES = {
         "description": "A bit of everything",
         "weights": {
             "safety": 2.0,
-            "culture": 1.0,
-            "nature": 1.0,
-            "food": 1.0,
+            "culture": 1.5,
+            "nature": 1.5,
+            "food": 1.5,
             "beach": 1.0,
             "english_level": 1.0,
+            "adventure": 1.0,
+            "nightlife": 0.5,
+            "romance": 1.0,
+            "family": 1.0,
+            "crowds": -0.5,
         }
     },
 }
 
 
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
 def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]]:
     """
-    Filters destinations based on user's budget. 
-    
-    Retrieves destinations from the database that match the user's
-    daily budget (total_budget / trip_days). 
+    Filters destinations based on user's budget.
     
     Args:
         total_budget: Total trip budget in CHF
@@ -176,35 +249,36 @@ def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]
         List of matching destination dictionaries
     """
     budget_matches = get_destinations_by_budget(total_budget, trip_days)
-    if budget_matches:
-        return budget_matches
-    # Fallback to all destinations if no matches
-    return get_all_destinations()
+    
+    # Fallback to all destinations if no budget matches
+    if not budget_matches:
+        return get_all_destinations()
+    
+    return budget_matches
 
 
 def test_locations(
-    budget_matches: List[Dict[str, Any]], 
-    id_used: List[int], 
+    budget_matches: List[Dict[str, Any]],
+    id_used: List[int],
     x: int = 3
 ) -> List[Dict[str, Any]]:
     """
     Selects random destinations for a matching round.
     
-    Randomly samples x destinations from the available pool,
-    excluding any that have already been shown to the user. 
-    
     Args:
         budget_matches: List of all matching destinations
         id_used: List of destination IDs already shown
-        x: Number of destinations to return (default: 3)
+        x: Number of destinations to return
         
     Returns:
         List of x random destinations
     """
-    remaining = [y for y in budget_matches if y["id"] not in id_used]
+    remaining = [d for d in budget_matches if d["id"] not in id_used]
+    
     if len(remaining) <= x:
         return remaining
-    return random. sample(remaining, x)
+    
+    return random.sample(remaining, x)
 
 
 def get_travel_style_weights(style: str) -> Dict[str, float]:
@@ -212,22 +286,23 @@ def get_travel_style_weights(style: str) -> Dict[str, float]:
     Returns the feature weights for a specific travel style.
     
     Args:
-        style: Travel style key (e.g., "beach_lover", "city_explorer")
+        style: Travel style key
         
     Returns:
         Dictionary of feature weights
     """
     if style in TRAVEL_STYLES:
         return TRAVEL_STYLES[style]["weights"]
-    return FEATURE_WEIGHTS
+    return DEFAULT_WEIGHTS
 
+
+# =============================================================================
+# SCORING ALGORITHM
+# =============================================================================
 
 def normalize_value(value: float, min_val: float, max_val: float) -> float:
     """
     Normalizes a value to the range 0-1. 
-    
-    Uses min-max normalization to scale values for fair comparison
-    between different features.
     
     Args:
         value: The value to normalize
@@ -246,8 +321,6 @@ def calculate_feature_ranges(destinations: List[Dict[str, Any]]) -> Dict[str, tu
     """
     Calculates min/max ranges for each feature across all destinations.
     
-    These ranges are used for normalization in the scoring algorithm.
-    
     Args:
         destinations: List of destination dictionaries
         
@@ -255,12 +328,17 @@ def calculate_feature_ranges(destinations: List[Dict[str, Any]]) -> Dict[str, tu
         Dictionary mapping feature names to (min, max) tuples
     """
     ranges = {}
-    for feature in NUMERIC_FEATURES:
-        values = [d[feature] for d in destinations if feature in d]
+    
+    # Add budget to features for range calculation
+    all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
+    
+    for feature in all_features:
+        values = [d.get(feature, 0) for d in destinations if feature in d]
         if values:
             ranges[feature] = (min(values), max(values))
         else:
-            ranges[feature] = (0, 1)
+            ranges[feature] = (1, 5)  # Default range for 1-5 scores
+    
     return ranges
 
 
@@ -270,24 +348,21 @@ def preference_vector(chosen: List[Dict[str, Any]]) -> Dict[str, float]:
     
     This is the core of the learning algorithm: it computes the average
     value for each feature across all destinations chosen by the user. 
-    This represents what the user typically prefers.
     
     Args:
         chosen: List of destinations chosen by the user
         
     Returns:
         Dictionary mapping features to average preferred values
-        
-    Example:
-        >>> prefs = preference_vector(user_choices)
-        >>> print(prefs["is_coastal"])  # e.g., 0.8 if user prefers coastal
     """
     if not chosen:
         return {}
     
     preference = {}
-    for feature in NUMERIC_FEATURES:
-        values = [dest[feature] for dest in chosen if feature in dest]
+    all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
+    
+    for feature in all_features:
+        values = [d.get(feature, 0) for d in chosen if feature in d]
         if values:
             preference[feature] = sum(values) / len(values)
     
@@ -295,16 +370,13 @@ def preference_vector(chosen: List[Dict[str, Any]]) -> Dict[str, float]:
 
 
 def calculate_match_score(
-    destination: Dict[str, Any], 
+    destination: Dict[str, Any],
     preference: Dict[str, float],
     feature_ranges: Dict[str, tuple],
     weights: Optional[Dict[str, float]] = None
 ) -> float:
     """
     Calculates match score between a destination and user preferences.
-    
-    This is the main ML algorithm: it computes a weighted similarity score
-    between a destination's features and the learned user preferences.
     
     Algorithm:
     1.  Normalize both destination and preference values to 0-1
@@ -316,7 +388,7 @@ def calculate_match_score(
         destination: Destination dictionary with features
         preference: User's preference vector
         feature_ranges: Min/max ranges for normalization
-        weights: Feature weights (optional, uses travel style weights)
+        weights: Feature weights
         
     Returns:
         Match score as percentage (0-100)
@@ -325,28 +397,33 @@ def calculate_match_score(
         return 50.0
     
     if weights is None:
-        weights = FEATURE_WEIGHTS
+        weights = DEFAULT_WEIGHTS
     
     total_weighted_similarity = 0.0
     total_weight = 0.0
     
-    for feature in NUMERIC_FEATURES:
+    all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
+    
+    for feature in all_features:
         if feature not in preference or feature not in destination:
             continue
         
-        min_val, max_val = feature_ranges. get(feature, (0, 1))
+        weight = weights.get(feature, 0)
+        if weight == 0:
+            continue
         
-        # Normalize values for fair comparison
+        min_val, max_val = feature_ranges. get(feature, (1, 5))
+        
+        # Normalize values
         norm_dest = normalize_value(destination[feature], min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
         
         # Calculate similarity (1 = identical, 0 = opposite)
         similarity = 1.0 - abs(norm_dest - norm_pref)
         
-        weight = weights.get(feature, 1.0)
         abs_weight = abs(weight)
         
-        # Negative weight = inverse preference (e.g., lower cost is better)
+        # Negative weight = inverse preference
         if weight < 0:
             similarity = 1.0 - similarity
         
@@ -356,7 +433,6 @@ def calculate_match_score(
     if total_weight == 0:
         return 50.0
     
-    # Convert to percentage
     score = (total_weighted_similarity / total_weight) * 100
     return round(score, 1)
 
@@ -370,9 +446,9 @@ def calculate_combined_score(
     Combines match score with weather score for final ranking.
     
     Args:
-        destination: Destination with weather_score field
+        destination: Destination with optional weather_score field
         match_score: Calculated match score
-        weather_weight: Weight for weather (0-1), rest goes to match
+        weather_weight: Weight for weather (0-1)
         
     Returns:
         Combined score as percentage (0-100)
@@ -382,37 +458,19 @@ def calculate_combined_score(
     return round(combined, 1)
 
 
-def scoring_destinations(
-    destination: Dict[str, Any], 
-    preference: Dict[str, float]
-) -> float:
-    """
-    Legacy scoring function using distance-based approach.
-    
-    Lower score = better match (inverse of similarity approach). 
-    Kept for backward compatibility. 
-    """
-    if not preference:
-        return 0
-    
-    score = 0
-    for feature in NUMERIC_FEATURES:
-        if feature in preference and feature in destination:
-            weight = FEATURE_WEIGHTS. get(feature, 1.0)
-            score += abs(destination[feature] - preference[feature]) * weight
-    
-    return score
-
+# =============================================================================
+# MAIN RANKING FUNCTION
+# =============================================================================
 
 def ranking_destinations(
-    budget_matches: List[Dict[str, Any]], 
+    budget_matches: List[Dict[str, Any]],
     chosen: List[Dict[str, Any]],
     travel_style: str = "balanced",
     use_weather: bool = True,
     weather_weight: float = 0.2
 ) -> List[Dict[str, Any]]:
     """
-    Ranks all destinations based on user preferences.
+    Ranks all destinations based on user preferences. 
     
     This is the main recommendation function that:
     1.  Learns user preferences from their choices
@@ -426,27 +484,28 @@ def ranking_destinations(
         chosen: Destinations chosen by user in matching rounds
         travel_style: Selected travel style for weight adjustment
         use_weather: Whether to include weather in scoring
-        weather_weight: How much weather affects final score (0-1)
+        weather_weight: How much weather affects final score
         
     Returns:
         Sorted list of destinations with scores added
     """
-    # Learn user preferences from their choices
+    # Learn user preferences
     preference = preference_vector(chosen)
     feature_ranges = calculate_feature_ranges(budget_matches)
     weights = get_travel_style_weights(travel_style)
     
     scored_destinations = []
+    
     for dest in budget_matches:
         dest_copy = dest.copy()
         
-        # Calculate match score using ML algorithm
+        # Calculate match score
         match_score = calculate_match_score(
             dest_copy, preference, feature_ranges, weights
         )
         dest_copy['match_score'] = match_score
         
-        # Get weather score (already enriched or default)
+        # Get weather score
         weather_score = dest_copy.get('weather_score', 50.0)
         dest_copy['weather_score'] = round(weather_score, 1)
         
@@ -457,9 +516,6 @@ def ranking_destinations(
             )
         else:
             dest_copy['combined_score'] = match_score
-        
-        # Legacy score for compatibility
-        dest_copy['distance_score'] = scoring_destinations(dest_copy, preference)
         
         scored_destinations.append(dest_copy)
     
@@ -478,8 +534,6 @@ def get_match_breakdown(
     """
     Generates detailed breakdown of match score by feature.
     
-    Useful for explaining to users why a destination was recommended.
-    
     Args:
         destination: The destination to analyze
         preference: User's preference vector
@@ -490,20 +544,24 @@ def get_match_breakdown(
         Dictionary with per-feature similarity details
     """
     if weights is None:
-        weights = FEATURE_WEIGHTS
+        weights = DEFAULT_WEIGHTS
     
     breakdown = {}
     
-    for feature in NUMERIC_FEATURES:
+    all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
+    
+    for feature in all_features:
         if feature not in preference or feature not in destination:
             continue
         
-        min_val, max_val = feature_ranges.get(feature, (0, 1))
+        weight = weights.get(feature, 0)
+        if weight == 0:
+            continue
+        
+        min_val, max_val = feature_ranges. get(feature, (1, 5))
         
         norm_dest = normalize_value(destination[feature], min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
-        
-        weight = weights.get(feature, 1.0)
         
         similarity = 1.0 - abs(norm_dest - norm_pref)
         
@@ -526,4 +584,4 @@ def get_match_breakdown(
 
 def test_matching():
     """Test function to verify module is loaded correctly."""
-    return "Test Matching successful"
+    return "Matching module loaded successfully"
