@@ -46,7 +46,7 @@ if st.button("Weather for Barcelona"):
         st.caption(f"Data from {weather['time']}")
 
 
-ROUNDS = 10 
+ROUNDS = 3 
 
 if "state" not in st.session_state:
     st.session_state.state = "Start"
@@ -79,7 +79,7 @@ if st.session_state.state == "Start":
         st.session_state.chosen = []
         st.session_state.round = 0
         st.session_state.state = "Matching"
-        st.rerun()
+        
 
 elif st.session_state.state == "Matching":
 
