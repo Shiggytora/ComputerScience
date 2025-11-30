@@ -53,7 +53,6 @@ def main():
             )
 
         with col2:
-            trip_days =with col2:
             trip_days = st.number_input(
                 "Trip Length (days)",
                 min_value=MIN_DAYS,
@@ -158,7 +157,7 @@ def main():
             )
         
         if ranked:
-            best = ranked,[object Object],
+            best = ranked [0],
             
             st.success(f"### {best['city']}, {best['country']}")
             st.write("Based on your preferences, this is your ideal destination!")
