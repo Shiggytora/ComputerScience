@@ -1,7 +1,7 @@
 """
 Amadeus Flight Price Fetcher
 
-Fetches flight prices from Zurich (ZRH) to all destinations.  
+Fetches flight prices from Zurich (ZRH) to all destinations. 
 Saves results to data/flight_prices.csv
 """
 
@@ -30,12 +30,11 @@ def get_amadeus_client():
 def get_flight_price(amadeus, origin: str, destination: str) -> dict:
     """Gets cheapest round-trip flight price."""
     
-    # Datum: 30 Tage in der Zukunft
     departure = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
     return_date = (datetime.now() + timedelta(days=37)).strftime("%Y-%m-%d")
     
     try:
-        response = amadeus.shopping.flight_offers_search.get(
+        response = amadeus.shopping.flight_offers_search. get(
             originLocationCode=origin,
             destinationLocationCode=destination,
             departureDate=departure,
@@ -45,7 +44,7 @@ def get_flight_price(amadeus, origin: str, destination: str) -> dict:
             max=3
         )
         
-        if response.data:
+        if response. data:
             cheapest = min(response.data, key=lambda x: float(x['price']['total']))
             return {
                 "success": True,
@@ -54,14 +53,14 @@ def get_flight_price(amadeus, origin: str, destination: str) -> dict:
         return {"success": False, "price": None}
         
     except ResponseError as e:
-        print(f"    API Error: {e}")
+        print(f"API Error: {e}")
         return {"success": False, "price": None}
 
 
 def fetch_all_flight_prices():
     """Main function - fetches prices for all destinations."""
     
-    # Alle 60 Destinationen mit IATA Codes
+    # Alle 60 Destinationen mit IATA Codes (korrigiert)
     destinations = [
         {"id": 1, "city": "Barcelona", "iata": "BCN"},
         {"id": 2, "city": "Paris", "iata": "CDG"},
@@ -88,41 +87,41 @@ def fetch_all_flight_prices():
         {"id": 23, "city": "Singapore", "iata": "SIN"},
         {"id": 24, "city": "Bali", "iata": "DPS"},
         {"id": 25, "city": "Seoul", "iata": "ICN"},
-        {"id": 26, "city": "Hong Kong", "iata": "HKG"},
+        {"id": 26, "city": "Hong_Kong", "iata": "HKG"},
         {"id": 27, "city": "Kyoto", "iata": "KIX"},
         {"id": 28, "city": "Vietnam_Hanoi", "iata": "HAN"},
         {"id": 29, "city": "Phuket", "iata": "HKT"},
-        {"id": 30, "city": "Maldives", "iata": "MLE"},
-        {"id": 31, "city": "Dubai", "iata": "DXB"},
-        {"id": 32, "city": "Tel_Aviv", "iata": "TLV"},
-        {"id": 33, "city": "Mumbai", "iata": "BOM"},
-        {"id": 34, "city": "Kathmandu", "iata": "KTM"},
-        {"id": 35, "city": "Petra_Amman", "iata": "AMM"},
-        {"id": 36, "city": "New_York", "iata": "JFK"},
-        {"id": 37, "city": "Los_Angeles", "iata": "LAX"},
-        {"id": 38, "city": "Miami", "iata": "MIA"},
-        {"id": 39, "city": "Cancun", "iata": "CUN"},
-        {"id": 40, "city": "San_Francisco", "iata": "SFO"},
-        {"id": 41, "city": "Las_Vegas", "iata": "LAS"},
-        {"id": 42, "city": "Hawaii", "iata": "HNL"},
-        {"id": 43, "city": "Toronto", "iata": "YYZ"},
-        {"id": 44, "city": "Vancouver", "iata": "YVR"},
-        {"id": 45, "city": "Mexico_City", "iata": "MEX"},
-        {"id": 46, "city": "Buenos_Aires", "iata": "EZE"},
-        {"id": 47, "city": "Rio_de_Janeiro", "iata": "GIG"},
-        {"id": 48, "city": "Lima", "iata": "LIM"},
-        {"id": 49, "city": "Bogota", "iata": "BOG"},
-        {"id": 50, "city": "Cartagena", "iata": "CTG"},
-        {"id": 51, "city": "Galapagos", "iata": "GPS"},
-        {"id": 52, "city": "Cape_Town", "iata": "CPT"},
-        {"id": 53, "city": "Marrakech", "iata": "RAK"},
-        {"id": 54, "city": "Cairo", "iata": "CAI"},
-        {"id": 55, "city": "Zanzibar", "iata": "ZNZ"},
-        {"id": 56, "city": "Nairobi", "iata": "NBO"},
-        {"id": 57, "city": "Sydney", "iata": "SYD"},
-        {"id": 58, "city": "Melbourne", "iata": "MEL"},
-        {"id": 59, "city": "Auckland", "iata": "AKL"},
-        {"id": 60, "city": "Seychelles", "iata": "SEZ"},
+        {"id": 30, "city": "Dubai", "iata": "DXB"},
+        {"id": 31, "city": "Maldives", "iata": "MLE"},
+        {"id": 32, "city": "New_York", "iata": "JFK"},
+        {"id": 33, "city": "Los_Angeles", "iata": "LAX"},
+        {"id": 34, "city": "Miami", "iata": "MIA"},
+        {"id": 35, "city": "Vancouver", "iata": "YVR"},
+        {"id": 36, "city": "Mexico_City", "iata": "MEX"},
+        {"id": 37, "city": "Cancun", "iata": "CUN"},
+        {"id": 38, "city": "Havana", "iata": "HAV"},
+        {"id": 39, "city": "Costa_Rica", "iata": "SJO"},
+        {"id": 40, "city": "Toronto", "iata": "YYZ"},
+        {"id": 41, "city": "Sydney", "iata": "SYD"},
+        {"id": 42, "city": "Melbourne", "iata": "MEL"},
+        {"id": 43, "city": "Auckland", "iata": "AKL"},
+        {"id": 44, "city": "Queenstown", "iata": "ZQN"},
+        {"id": 45, "city": "Fiji", "iata": "NAN"},
+        {"id": 46, "city": "Cape_Town", "iata": "CPT"},
+        {"id": 47, "city": "Marrakech", "iata": "RAK"},
+        {"id": 48, "city": "Cairo", "iata": "CAI"},
+        {"id": 49, "city": "Zanzibar", "iata": "ZNZ"},
+        {"id": 50, "city": "Mauritius", "iata": "MRU"},
+        {"id": 51, "city": "Rio_de_Janeiro", "iata": "GIG"},
+        {"id": 52, "city": "Buenos_Aires", "iata": "EZE"},
+        {"id": 53, "city": "Cusco", "iata": "CUZ"},
+        {"id": 54, "city": "Cartagena", "iata": "CTG"},
+        {"id": 55, "city": "Patagonia", "iata": "FTE"},
+        {"id": 56, "city": "Galapagos", "iata": "GPS"},
+        {"id": 57, "city": "Machu_Picchu", "iata": "CUZ"},
+        {"id": 58, "city": "Petra", "iata": "AMM"},
+        {"id": 59, "city": "Seychelles", "iata": "SEZ"},
+        {"id": 60, "city": "Amalfi_Coast", "iata": "NAP"},
     ]
     
     print("=" * 60)
@@ -137,9 +136,8 @@ def fetch_all_flight_prices():
         city = dest["city"]
         iata = dest["iata"]
         
-        print(f"[{dest['id']:2d}/60] {city:20s} ({iata})...  ", end="", flush=True)
+        print(f"[{dest['id']:2d}/60] {city:20s} ({iata})...   ", end="", flush=True)
         
-        # Skip Zurich (same as origin)
         if iata == "ZRH":
             print("SKIP (origin)")
             results.append({"id": dest["id"], "city": city, "iata": iata, "price": 0})
@@ -152,15 +150,14 @@ def fetch_all_flight_prices():
             results.append({"id": dest["id"], "city": city, "iata": iata, "price": price_info["price"]})
         else:
             print("FAILED")
-            results.append({"id": dest["id"], "city": city, "iata": iata, "price": ""})
+            results. append({"id": dest["id"], "city": city, "iata": iata, "price": ""})
         
-        # Rate limiting
         time.sleep(0.5)
     
     # Save to CSV
-    output_file = "data/flight_prices.csv"
+    output_file = "data/flight_prices. csv"
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "city", "iata", "price"], delimiter=';')
+        writer = csv. DictWriter(f, fieldnames=["id", "city", "iata", "price"], delimiter=';')
         writer.writeheader()
         writer.writerows(results)
     
@@ -172,6 +169,5 @@ def fetch_all_flight_prices():
     print("=" * 60)
 
 
-# Wenn Script direkt ausgeführt wird
 if __name__ == "__main__":
     fetch_all_flight_prices()
