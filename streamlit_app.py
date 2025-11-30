@@ -112,8 +112,8 @@ def main():
                 with col2:
                     st.metric("Rating", f"{loc.get('tourist_rating', 'N/A')}")
                 with col3:
-                    if 'avg_cost_per_day' in loc:
-                        st.metric("Daily Cost", f"CHF {loc['avg_cost_per_day']}")
+                    if 'avg_budget_per_day' in loc:
+                        st.metric("Daily Budget", f"CHF {loc['avg_budget_per_day']}")
                 st.divider()
         
         ids = [loc["id"] for loc in locations]
@@ -172,8 +172,8 @@ def main():
             with col2:
                 st.metric("Match Score", f"{best.get('match_score', 'N/A')}")
             with col3:
-                if 'avg_cost_per_day' in best:
-                    total_cost = best['avg_cost_per_day'] * st.session_state.trip_days
+                if 'avg_budget_per_day' in best:
+                    total_cost = best['avg_budget_per_day'] * st.session_state.trip_days
                     st.metric("Estimated Total", f"CHF {total_cost:.2f}")
             
             st.divider()
