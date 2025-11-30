@@ -151,7 +151,8 @@ def get_score_label(score: float) -> str:
 def render_destination_card(loc: Dict[str, Any], index: int):
     """Renders a destination card with flight price."""
     with st.container():
-        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        # Breitere Spalten für die Zahlen
+        col1, col2, col3, col4 = st.columns([2. 5, 1, 1. 2, 1. 2])
         
         with col1:
             st.markdown(f"### {loc['city']}")
@@ -162,24 +163,20 @@ def render_destination_card(loc: Dict[str, Any], index: int):
         
         with col2:
             safety = loc.get('safety', 'N/A')
-            st.metric("Safety", f"🛡️ {safety}/5")
+            st.metric("Safety", f"{safety}/5")
         
         with col3:
             # Flugpreis anzeigen
-            flight = loc.get('flight_price')
+            flight = loc. get('flight_price')
             if flight:
-                st.metric("✈️ Flight", f"CHF {flight}")
+                st.metric("✈️ Flight", f"{flight}")
             else:
                 st.metric("✈️ Flight", "N/A")
         
         with col4:
-            # Gesamtkosten anzeigen
-            total = loc.get('total_trip_cost')
-            if total:
-                st.metric("💰 Total", f"CHF {int(total)}")
-            else:
-                daily = loc.get('avg_budget_per_day', 0)
-                st.metric("📅 /Day", f"CHF {int(daily)}")
+            # Tagesbudget anzeigen
+            daily = loc.get('avg_budget_per_day', 0)
+            st.metric("📅 /Day", f"{int(daily)}")
         
         st.divider()
 
