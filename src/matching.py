@@ -16,7 +16,7 @@ def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]
     return get_all_destinations()
 
 def test_locations(budget_matches: List[Dict[str, Any]], id_used: List[int], x: int = 3):
-    remaining = [y for y in budget_matches if y ["id"] not in id_used]
+    remaining = [y for y in budget_matches if y["id"] not in id_used]
     if len(remaining) <= x:
         return remaining
     return random.sample(remaining, x)

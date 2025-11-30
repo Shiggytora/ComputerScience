@@ -143,7 +143,7 @@ def main():
                         st.session_state.state = "Results"
                     else:
                         st.session_state.state = "Matching"
-                    
+                            
                     st.rerun()
         else:
             st.info("Please select a destination to continue")
@@ -159,7 +159,7 @@ def main():
             )
         
         if ranked:
-            best = ranked [0],
+            best = ranked [0]
             
             st.success(f"### {best['city']}, {best['country']}")
             st.write("Based on your preferences, this is your ideal destination!")
