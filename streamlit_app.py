@@ -48,10 +48,7 @@ def reset_session_state():
 
 
 def get_current_round_locations() -> List[Dict[str, Any]]:
-    """
-    Holt die Locations für die aktuelle Runde. 
-    Stellt sicher, dass dieselben Locations angezeigt werden bis zur nächsten Runde.
-    """
+    """Holt die Locations für die aktuelle Runde."""
     round_key = f"locations_round_{st. session_state.round}"
     
     if round_key not in st.session_state or not st.session_state[round_key]:
@@ -81,7 +78,7 @@ def process_selection(choice_id: int, locations: List[Dict[str, Any]]):
     st.session_state. round += 1
     
     if st.session_state.round >= ROUNDS:
-        st.session_state.state = "Results"
+        st. session_state.state = "Results"
     else:
         st. session_state.state = "Matching"
     
@@ -91,7 +88,7 @@ def process_selection(choice_id: int, locations: List[Dict[str, Any]]):
 def render_destination_card(loc: Dict[str, Any], index: int):
     """Rendert eine einzelne Destination-Karte."""
     with st.container():
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2, col3 = st. columns([3, 1, 1])
         
         with col1:
             st.markdown(f"### {loc['city']}")
@@ -103,14 +100,15 @@ def render_destination_card(loc: Dict[str, Any], index: int):
         
         with col3:
             if 'avg_budget_per_day' in loc:
-                st.metric("Daily Budget", f"CHF {loc['avg_budget_per_day']:.0f}")
+                budget_value = int(loc['avg_budget_per_day'])
+                st. metric("Daily Budget", f"CHF {budget_value}")
         
         st.divider()
 
 
 def render_progress_bar():
     """Rendert die Fortschrittsanzeige."""
-    current_round = st. session_state.round
+    current_round = st.session_state.round
     progress = current_round / ROUNDS
     
     st.progress(progress, text=f"Progress: {current_round}/{ROUNDS} rounds completed")
@@ -147,7 +145,7 @@ def render_start_page():
     
     if trip_days > 0:
         budget_per_day = total_budget / trip_days
-        st. info(f"💵 Budget per day: **CHF {budget_per_day:.2f}**")
+        st.info(f"💵 Budget per day: **CHF {budget_per_day:.2f}**")
     
     st.divider()
     
@@ -213,11 +211,11 @@ def render_matching_page():
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button(
-                f"✓ Confirm & Go to Round {current_display_round + 1}" if current_display_round < ROUNDS else "✓ Confirm & See Results",
-                type="primary", 
-                use_container_width=True
-            ):
+            btn_text = f"✓ Confirm & Go to Round {current_display_round + 1}"
+            if current_display_round >= ROUNDS:
+                btn_text = "✓ Confirm & See Results"
+            
+            if st.button(btn_text, type="primary", use_container_width=True):
                 if process_selection(choice, locations):
                     st.rerun()
     else:
@@ -244,19 +242,22 @@ def render_results_page():
         best = ranked[0]
         
         st.success(f"### 🏆 {best['city']}, {best['country']}")
-        st.write("Based on your preferences, this is your ideal destination!")
+        st. write("Based on your preferences, this is your ideal destination!")
         
         st.divider()
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Tourist Rating", f"⭐ {best. get('tourist_rating', 'N/A')}")
+            rating = best.get('tourist_rating', 'N/A')
+            st.metric("Tourist Rating", f"⭐ {rating}")
         with col2:
-            st.metric("Match Score", f"🎯 {best. get('match_score', 'N/A')}")
+            score = best.get('match_score', 'N/A')
+            st.metric("Match Score", f"🎯 {score}")
         with col3:
             if 'avg_budget_per_day' in best:
                 total_cost = best['avg_budget_per_day'] * st.session_state. trip_days
-                st.metric("Estimated Total", f"💰 CHF {total_cost:. 2f}")
+                total_cost_rounded = round(total_cost, 2)
+                st.metric("Estimated Total", f"💰 CHF {total_cost_rounded}")
         
         st.divider()
         
@@ -270,11 +271,12 @@ def render_results_page():
         if len(ranked) > 1:
             st.subheader("🥈 Other Great Options:")
             for i, dest in enumerate(ranked[1:4], 2):
-                col1, col2 = st. columns([3, 1])
+                col1, col2 = st.columns([3, 1])
                 with col1:
-                    st.write(f"**{i}. ** {dest['city']}, {dest['country']}")
+                    st. write(f"**{i}. ** {dest['city']}, {dest['country']}")
                 with col2:
-                    st. caption(f"Rating: {dest.get('tourist_rating', 'N/A')}")
+                    dest_rating = dest. get('tourist_rating', 'N/A')
+                    st.caption(f"Rating: {dest_rating}")
         
         st.divider()
     else:
@@ -299,9 +301,9 @@ def main():
     
     with st.sidebar:
         st. subheader("🔧 Debug Info")
-        st.write(f"State: {st.session_state.state}")
-        st.write(f"Round: {st.session_state. round}")
-        st.write(f"Chosen: {len(st.session_state.chosen)}")
+        st. write(f"State: {st.session_state.state}")
+        st.write(f"Round: {st.session_state.round}")
+        st.write(f"Chosen: {len(st. session_state.chosen)}")
     
     if st. session_state.state == "Start":
         render_start_page()
