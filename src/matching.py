@@ -2,11 +2,11 @@
 Matching Module - Core Recommendation Engine
 
 This module implements the matching algorithm that learns user preferences
-from their choices and calculates compatibility scores for all destinations.
+from their choices and calculates compatibility scores for all destinations. 
 
 The algorithm uses:
-1.  Preference learning from user selections
-2. Weighted feature similarity scoring
+1. Preference learning from user selections
+2.  Weighted feature similarity scoring
 3. Travel style adjustments
 4. Weather integration (optional)
 
@@ -16,8 +16,6 @@ Part of Requirement #5: Machine Learning Implementation
 import random
 from typing import List, Dict, Any, Optional
 from src.data import get_destinations_by_budget, get_all_destinations
-
-
 
 # =============================================================================
 # FEATURE CONFIGURATION
@@ -245,7 +243,7 @@ TRAVEL_STYLES = {
 
 def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]]:
     """
-    Filters destinations based on user's budget.
+    Filters destinations based on user's budget. 
     
     Args:
         total_budget: Total trip budget in CHF
@@ -339,7 +337,12 @@ def calculate_feature_ranges(destinations: List[Dict[str, Any]]) -> Dict[str, tu
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
     for feature in all_features:
-        values = [d.get(feature, 0) for d in destinations if feature in d]
+        values = []
+        for d in destinations:
+            val = d.get(feature)
+            if val is not None:
+                values.append(val)
+        
         if values:
             ranges[feature] = (min(values), max(values))
         else:
@@ -368,7 +371,12 @@ def preference_vector(chosen: List[Dict[str, Any]]) -> Dict[str, float]:
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
     for feature in all_features:
-        values = [d.get(feature, 0) for d in chosen if feature in d]
+        values = []
+        for d in chosen:
+            val = d.get(feature)
+            if val is not None:
+                values.append(val)
+        
         if values:
             preference[feature] = sum(values) / len(values)
     
@@ -411,17 +419,21 @@ def calculate_match_score(
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
     for feature in all_features:
-        if feature not in preference or feature not in destination:
+        if feature not in preference:
+            continue
+        
+        dest_value = destination.get(feature)
+        if dest_value is None:
             continue
         
         weight = weights.get(feature, 0)
         if weight == 0:
             continue
         
-        min_val, max_val = feature_ranges. get(feature, (1, 5))
+        min_val, max_val = feature_ranges.get(feature, (1, 5))
         
         # Normalize values
-        norm_dest = normalize_value(destination[feature], min_val, max_val)
+        norm_dest = normalize_value(dest_value, min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
         
         # Calculate similarity (1 = identical, 0 = opposite)
@@ -459,7 +471,9 @@ def calculate_combined_score(
     Returns:
         Combined score as percentage (0-100)
     """
-    weather_score = destination. get('weather_score', 50.0)
+    weather_score = destination.get('weather_score', 50.0)
+    if weather_score is None:
+        weather_score = 50.0
     combined = (match_score * (1 - weather_weight)) + (weather_score * weather_weight)
     return round(combined, 1)
 
@@ -476,13 +490,13 @@ def ranking_destinations(
     weather_weight: float = 0.2
 ) -> List[Dict[str, Any]]:
     """
-    Ranks all destinations based on user preferences. 
+    Ranks all destinations based on user preferences.
     
     This is the main recommendation function that:
     1.  Learns user preferences from their choices
     2.  Applies travel style weights
     3.  Calculates match scores for all destinations
-    4.  Optionally incorporates weather data
+    4. Optionally incorporates weather data
     5. Returns sorted list with best matches first
     
     Args:
@@ -513,6 +527,8 @@ def ranking_destinations(
         
         # Get weather score
         weather_score = dest_copy.get('weather_score', 50.0)
+        if weather_score is None:
+            weather_score = 50.0
         dest_copy['weather_score'] = round(weather_score, 1)
         
         # Calculate combined score
@@ -557,16 +573,20 @@ def get_match_breakdown(
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
     for feature in all_features:
-        if feature not in preference or feature not in destination:
+        if feature not in preference:
+            continue
+        
+        dest_value = destination.get(feature)
+        if dest_value is None:
             continue
         
         weight = weights.get(feature, 0)
         if weight == 0:
             continue
         
-        min_val, max_val = feature_ranges. get(feature, (1, 5))
+        min_val, max_val = feature_ranges.get(feature, (1, 5))
         
-        norm_dest = normalize_value(destination[feature], min_val, max_val)
+        norm_dest = normalize_value(dest_value, min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
         
         similarity = 1.0 - abs(norm_dest - norm_pref)
@@ -578,7 +598,7 @@ def get_match_breakdown(
             display_similarity = similarity
         
         breakdown[feature] = {
-            'destination_value': destination[feature],
+            'destination_value': dest_value,
             'preference_value': round(preference[feature], 2),
             'similarity': round(display_similarity * 100, 1),
             'weight': weight,
