@@ -44,83 +44,120 @@ FEATURE_WEIGHTS = {
 # Each style adjusts feature importance to match user preferences
 # Negative weights indicate inverse preference (e.g., lower is better)
 TRAVEL_STYLES = {
-    "beach_lover": {
-        "name": "🏖️ Beach Vacation",
-        "description": "Sun, sea, and relaxation",
+    "beach_relaxation": {
+        "name": "🏖️ Beach & Relaxation",
+        "description": "Sun, sand, and relaxation",
         "weights": {
-            "is_coastal": 3.0,
-            "climate_category": 2.5,
-            "tourist_rating": 1.5,
-            "city_size": 0.5,
-            "tourist_volume_base": 1.0,
-            "cost_index": 1.0,
+            "beach": 3.0,
+            "safety": 2.0,
+            "crowds": -1.5,
+            "nature": 1.5,
+            "romance": 1.0,
+            "nightlife": 0.5,
         }
     },
-    "city_explorer": {
-        "name": "🏙️ City Trip",
-        "description": "Culture, history, and urban life",
+    "culture_history": {
+        "name": "🏛️ Culture & History",
+        "description": "Museums, architecture, and heritage",
         "weights": {
-            "city_size": 3.0,
-            "tourist_rating": 2.5,
-            "is_coastal": 0.5,
-            "climate_category": 1.0,
-            "tourist_volume_base": 1.5,
-            "cost_index": 1.0,
+            "culture": 3.0,
+            "food": 2.0,
+            "safety": 1.5,
+            "english_level": 1.0,
+            "nature": 0.5,
         }
     },
-    "budget_traveler": {
-        "name": "💰 Budget Trip",
+    "adventure_nature": {
+        "name": "🏔️ Adventure & Nature",
+        "description": "Hiking, wildlife, and outdoor activities",
+        "weights": {
+            "adventure": 3.0,
+            "nature": 3.0,
+            "crowds": -2.0,
+            "safety": 1.5,
+            "culture": 0.5,
+        }
+    },
+    "foodie": {
+        "name": "🍽️ Food & Culinary",
+        "description": "Local cuisine and gastronomic experiences",
+        "weights": {
+            "food": 3.0,
+            "culture": 2.0,
+            "safety": 1.5,
+            "english_level": 1.0,
+            "nightlife": 1.0,
+        }
+    },
+    "party_nightlife": {
+        "name": "🎉 Party & Nightlife",
+        "description": "Clubs, bars, and vibrant nightlife",
+        "weights": {
+            "nightlife": 3.0,
+            "beach": 1.5,
+            "safety": 1.5,
+            "english_level": 1.5,
+            "food": 1.0,
+        }
+    },
+    "romantic_getaway": {
+        "name": "💕 Romantic Getaway",
+        "description": "Perfect for couples and honeymoons",
+        "weights": {
+            "romance": 3.0,
+            "safety": 2.5,
+            "food": 2.0,
+            "beach": 1.5,
+            "crowds": -1.5,
+            "nature": 1.5,
+        }
+    },
+    "family_vacation": {
+        "name": "👨‍👩‍👧‍👦 Family Vacation",
+        "description": "Safe and fun for the whole family",
+        "weights": {
+            "family": 3.0,
+            "safety": 3.0,
+            "english_level": 2.0,
+            "beach": 1.5,
+            "nature": 1.5,
+            "nightlife": -1.0,
+        }
+    },
+    "budget_backpacker": {
+        "name": "💰 Budget Travel",
         "description": "Maximum experience, minimum cost",
         "weights": {
-            "cost_index": -3.0,  # Negative = prefer lower costs
-            "tourist_rating": 2.0,
-            "city_size": 1.0,
-            "is_coastal": 1.0,
-            "climate_category": 1.5,
-            "tourist_volume_base": 0.5,
+            "avg_budget_per_day": -3.0,
+            "safety": 2.0,
+            "culture": 1.5,
+            "food": 1.5,
+            "adventure": 1.0,
         }
     },
-    "off_the_beaten_path": {
-        "name": "🗺️ Hidden Gem",
-        "description": "Off the tourist trail",
+    "hidden_gems": {
+        "name": "🗺️ Hidden Gems",
+        "description": "Off the beaten path destinations",
         "weights": {
-            "tourist_volume_base": -2.5,  # Prefer fewer tourists
-            "tourist_rating": 1.5,
-            "city_size": -1.0,  # Prefer smaller places
-            "is_coastal": 1.0,
-            "climate_category": 1.5,
-            "cost_index": 1.0,
-        }
-    },
-    "luxury": {
-        "name": "💎 Luxury",
-        "description": "Premium experiences and comfort",
-        "weights": {
-            "tourist_rating": 3.0,
-            "cost_index": 2.0,  # Higher cost = higher quality
-            "city_size": 1.5,
-            "is_coastal": 1.5,
-            "climate_category": 1.5,
-            "tourist_volume_base": 1.0,
-        }
-    },
-    "adventure": {
-        "name": "🏔️ Adventure",
-        "description": "Active and nature-focused",
-        "weights": {
-            "climate_category": 2.0,
-            "is_coastal": 1.5,
-            "tourist_volume_base": -1.0,
-            "city_size": -0.5,
-            "tourist_rating": 1.5,
-            "cost_index": 1.0,
+            "crowds": -3.0,
+            "nature": 2.0,
+            "culture": 1.5,
+            "adventure": 1.5,
+            "safety": 1.0,
         }
     },
     "balanced": {
         "name": "⚖️ Balanced",
         "description": "A bit of everything",
-        "weights": FEATURE_WEIGHTS. copy(),
-    }
+        "weights": {
+            "safety": 2.0,
+            "culture": 1.0,
+            "nature": 1.0,
+            "food": 1.0,
+            "beach": 1.0,
+            "english_level": 1.0,
+        }
+    },
 }
 
 
