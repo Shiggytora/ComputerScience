@@ -33,12 +33,11 @@ NUMERIC_FEATURES = [
     "cost_index",
 ]
 
-# Gewichtung der Features (höher = wichtiger für den Match Score)
 FEATURE_WEIGHTS = {
     "city_size": 1.0,
-    "tourist_rating": 2.0,        # Rating ist wichtiger
+    "tourist_rating": 2.0,
     "tourist_volume_base": 1.0,
-    "is_coastal": 1.5,            # Küstenlage ist mittel-wichtig
+    "is_coastal": 1.5,
     "climate_category": 1.5,
     "cost_index": 1.0,
 }
@@ -84,11 +83,10 @@ def calculate_match_score(
 ) -> float:
     """
     Berechnet einen Match Score zwischen 0-100%. 
-    
     Je höher der Score, desto besser passt die Destination zu den Präferenzen.
     """
     if not preference:
-        return 50.0  # Neutraler Score wenn keine Präferenzen
+        return 50.0
     
     total_weighted_similarity = 0.0
     total_weight = 0.0
@@ -99,14 +97,11 @@ def calculate_match_score(
         
         min_val, max_val = feature_ranges. get(feature, (0, 1))
         
-        # Normalisiere beide Werte
         norm_dest = normalize_value(destination[feature], min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
         
-        # Berechne Ähnlichkeit (1 - Differenz)
-        similarity = 1. 0 - abs(norm_dest - norm_pref)
+        similarity = 1.0 - abs(norm_dest - norm_pref)
         
-        # Gewichtung anwenden
         weight = FEATURE_WEIGHTS.get(feature, 1.0)
         total_weighted_similarity += similarity * weight
         total_weight += weight
@@ -114,7 +109,6 @@ def calculate_match_score(
     if total_weight == 0:
         return 50.0
     
-    # Score als Prozent (0-100)
     score = (total_weighted_similarity / total_weight) * 100
     return round(score, 1)
 
@@ -144,15 +138,13 @@ def ranking_destinations(
     preference = preference_vector(chosen)
     feature_ranges = calculate_feature_ranges(budget_matches)
     
-    # Score berechnen und hinzufügen
     scored_destinations = []
     for dest in budget_matches:
         dest_copy = dest.copy()
         dest_copy['match_score'] = calculate_match_score(dest_copy, preference, feature_ranges)
         dest_copy['distance_score'] = scoring_destinations(dest_copy, preference)
-        scored_destinations. append(dest_copy)
+        scored_destinations.append(dest_copy)
     
-    # Nach Match Score sortieren (höher = besser)
     scored_destinations.sort(key=lambda d: d['match_score'], reverse=True)
     
     return scored_destinations
@@ -165,7 +157,6 @@ def get_match_breakdown(
 ) -> Dict[str, Dict[str, Any]]:
     """
     Gibt eine detaillierte Aufschlüsselung des Match Scores zurück. 
-    Nützlich für die Anzeige, warum eine Destination gut/schlecht passt.
     """
     breakdown = {}
     
