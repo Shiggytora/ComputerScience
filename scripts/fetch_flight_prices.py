@@ -10,9 +10,6 @@ from pathlib import Path
 import os
 import sys
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from amadeus import Client, ResponseError
 from dotenv import load_dotenv
 
@@ -20,9 +17,11 @@ load_dotenv()
 
 # Configuration
 ORIGIN = "ZRH"
-BASE_DIR = Path(__file__).parent.parent
-DESTINATIONS_FILE = BASE_DIR / "data" / "destinations.csv"
-OUTPUT_FILE = BASE_DIR / "data" / "flight_prices.csv"
+
+# KORRIGIERT: Direkter Pfad zu deinem Ordner
+BASE_DIR = Path("C:/Users/Jan Linsen/ComputerScience")
+DESTINATIONS_FILE = Path("C:/Users/Jan Linsen/ComputerScience/data/destinations.csv")
+OUTPUT_FILE = Path("C:/Users/Jan Linsen/ComputerScience/data/flight_prices.csv")
 
 
 def get_amadeus_client():
@@ -75,6 +74,11 @@ def main():
     print("FLIGHT PRICE FETCHER")
     print(f"Origin: {ORIGIN} (Zurich)")
     print("=" * 60)
+    
+    # Check if file exists
+    if not DESTINATIONS_FILE.exists():
+        print(f"ERROR: File not found: {DESTINATIONS_FILE}")
+        sys.exit(1)
     
     # Load destinations
     destinations = []
