@@ -668,7 +668,7 @@ def main():
         
         st.divider()
         st.caption("Travel Recommender v2.0")
-        st.caption("University Project 2024")
+        st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
         render_start_page()
