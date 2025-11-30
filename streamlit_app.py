@@ -88,7 +88,7 @@ def initialize_session_state():
     
     for key, value in defaults.items():
         if key not in st.session_state:
-            st. session_state[key] = value
+            st.session_state[key] = value
 
 
 def reset_session_state():
@@ -285,7 +285,7 @@ def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
             label = name
             if is_inverse:
                 label += " (inverse)"
-            st. write(f"{label}")
+            st.write(f"{label}")
         with col2:
             st.write(f"{color} {similarity}%")
         with col3:
@@ -335,7 +335,7 @@ def render_insights(insights: Dict[str, Any]):
         for i, (key, value) in enumerate(list(prefs.items())[:5]):
             with cols[i]:
                 label = labels.get(key, key)
-                st.metric(label, f"{value:. 2f}")
+                st.metric(label, f"{value:.2f}")
 
 
 # =============================================================================
