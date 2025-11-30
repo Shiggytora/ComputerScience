@@ -23,7 +23,7 @@ import streamlit as st
 from typing import List, Dict, Any
 
 # Import custom modules
-from src. matching import (
+from src.matching import (
     filter_by_budget,
     test_locations,
     ranking_destinations,
