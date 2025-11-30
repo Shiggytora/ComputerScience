@@ -152,7 +152,7 @@ def render_destination_card(loc: Dict[str, Any], index: int):
     """Renders a destination card with flight price."""
     with st.container():
         # Breitere Spalten für die Zahlen
-        col1, col2, col3, col4 = st.columns([2.5, 1, 1.2, 1.2])
+        col1, col2, col3, col4 = st.columns([2.5, 1, 1.5, 1.2])
         
         with col1:
             st.markdown(f"### {loc['city']}")
