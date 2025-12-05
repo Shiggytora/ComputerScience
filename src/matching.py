@@ -619,7 +619,185 @@ def get_match_breakdown(
     
     return breakdown
 
+# =============================================================================
+# SIMILAR DESTINATIONS
+# =============================================================================
 
-def test_matching():
-    """Test function to verify module is loaded correctly."""
-    return "Matching module loaded successfully"
+def find_similar_destinations(
+    target: Dict[str, Any],
+    all_destinations: List[Dict[str, Any]],
+    num_similar: int = 3
+) -> List[Dict[str, Any]]:
+    """
+    Finds destinations similar to the target based on feature profiles.
+    
+    This function compares the target destination's features with all other
+    destinations and returns the most similar ones.  Useful for suggesting
+    alternatives to the user's top match.
+    
+    Algorithm:
+    1. Compare each feature value between target and candidate
+    2. Calculate similarity as 1 - (normalized difference)
+    3. Average across all features
+    4. Return top N most similar destinations
+    
+    Args:
+        target: The destination to find similar ones for
+        all_destinations: All available destinations to compare against
+        num_similar: Number of similar destinations to return (default: 3)
+        
+    Returns:
+        List of similar destinations sorted by similarity score,
+        each with an added 'similarity_score' field (0-100)
+        
+    Example:
+        >>> similar = find_similar_destinations(best_match, all_destinations, 3)
+        >>> for dest in similar:
+        ...     print(f"{dest['city']}: {dest['similarity_score']}% similar")
+    """
+    features = [
+        "beach", "culture", "nature", "food", "nightlife",
+        "adventure", "safety", "romance", "family", "crowds"
+    ]
+    
+    similarities = []
+    
+    for dest in all_destinations:
+        # Skip the target destination itself
+        if dest.get('id') == target.get('id'):
+            continue
+        
+        # Calculate feature similarity
+        similarity_sum = 0
+        feature_count = 0
+        
+        for feature in features:
+            target_val = target.get(feature)
+            dest_val = dest.get(feature)
+            
+            if target_val is not None and dest_val is not None:
+                # Normalize difference (max diff is 4 on 1-5 scale)
+                diff = abs(target_val - dest_val) / 4.0
+                # Similarity = 1 - normalized difference
+                similarity_sum += (1 - diff)
+                feature_count += 1
+        
+        if feature_count > 0:
+            avg_similarity = (similarity_sum / feature_count) * 100
+            similarities.append({
+                **dest,
+                'similarity_score': round(avg_similarity, 1)
+            })
+    
+    # Sort by similarity score (highest first)
+    similarities.sort(key=lambda x: x['similarity_score'], reverse=True)
+    
+    return similarities[:num_similar]
+
+
+# =============================================================================
+# RECOMMENDATION CONFIDENCE
+# =============================================================================
+
+def calculate_recommendation_confidence(
+    ranked_destinations: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Calculates how confident the recommendation is based on score distribution.
+    
+    High confidence means there's a clear winner with a significant gap
+    between the top match and alternatives.  Low confidence means many
+    destinations have similar scores, so the user might want to explore options.
+    
+    Factors considered:
+    1. Gap between #1 and #2 ranked destinations
+    2.  Score spread among top 5 destinations
+    3. Absolute score of the top match
+    
+    Args:
+        ranked_destinations: List of destinations sorted by combined_score
+        
+    Returns:
+        Dictionary containing:
+        - confidence: Percentage (0-100)
+        - label: Human-readable confidence label
+        - gap_to_second: Score difference between #1 and #2
+        - top5_spread: Standard deviation of top 5 scores
+        - recommendation: Advice based on confidence level
+        
+    Example:
+        >>> confidence = calculate_recommendation_confidence(ranked)
+        >>> print(f"Confidence: {confidence['label']} ({confidence['confidence']}%)")
+    """
+    if not ranked_destinations:
+        return {
+            "confidence": 0,
+            "label": "No data",
+            "gap_to_second": 0,
+            "top5_spread": 0,
+            "recommendation": "No destinations to analyze"
+        }
+    
+    if len(ranked_destinations) == 1:
+        return {
+            "confidence": 100,
+            "label": "Only option",
+            "gap_to_second": 0,
+            "top5_spread": 0,
+            "recommendation": "This is the only destination matching your criteria"
+        }
+    
+    # Get scores from top destinations
+    scores = [d.get('combined_score', 0) for d in ranked_destinations[:5]]
+    top_score = scores[0]
+    
+    # Calculate gap between #1 and #2
+    gap = scores[0] - scores[1]
+    
+    # Calculate standard deviation of top 5
+    avg = sum(scores) / len(scores)
+    variance = sum((s - avg) ** 2 for s in scores) / len(scores)
+    std_dev = variance ** 0.5
+    
+    # Determine confidence level based on gap and top score
+    if gap >= 10 and top_score >= 75:
+        confidence = 95
+        label = "Very High"
+        emoji = "🎯"
+        recommendation = "Clear winner!  This destination stands out for you."
+    elif gap >= 7 and top_score >= 70:
+        confidence = 85
+        label = "High"
+        emoji = "✅"
+        recommendation = "Strong match! You can book with confidence."
+    elif gap >= 4 and top_score >= 60:
+        confidence = 70
+        label = "Good"
+        emoji = "👍"
+        recommendation = "Good match. Consider checking the alternatives too."
+    elif gap >= 2:
+        confidence = 55
+        label = "Medium"
+        emoji = "🤔"
+        recommendation = "Several good options. Compare the top 3 destinations."
+    else:
+        confidence = 40
+        label = "Low"
+        emoji = "⚖️"
+        recommendation = "Many similar options. Explore alternatives below."
+    
+    # Adjust confidence if top score is low
+    if top_score < 50:
+        confidence = min(confidence, 50)
+        recommendation = "Scores are low. Consider adjusting your preferences."
+    
+    return {
+        "confidence": confidence,
+        "label": label,
+        "emoji": emoji,
+        "gap_to_second": round(gap, 1),
+        "top5_spread": round(std_dev, 1),
+        "top_score": round(top_score, 1),
+        "recommendation": recommendation
+    }
+
