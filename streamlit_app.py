@@ -21,6 +21,16 @@ from src.matching import (
 from src.weather_matching import enrich_destinations_with_weather
 from src.insights import generate_preference_insights
 from src.session_manager import export_session, get_export_filename
+from src.visuals import (
+    create_preference_radar_chart,
+    create_comparison_radar_chart,
+    create_score_breakdown_chart,
+    create_top_destinations_chart,
+    create_budget_comparison_chart,
+    create_weather_score_chart,
+    create_score_gauge,
+    FEATURE_CONFIG,
+)
 
 # =============================================================================
 # CONFIGURATION
@@ -28,8 +38,8 @@ from src.session_manager import export_session, get_export_filename
 
 ROUNDS = 7
 MIN_BUDGET = 100
-MAX_BUDGET = 15000  # Erhöht für Flugkosten
-DEFAULT_BUDGET = 3000  # Erhöht für Flugkosten
+MAX_BUDGET = 15000
+DEFAULT_BUDGET = 3000
 MIN_DAYS = 1
 MAX_DAYS = 60
 DEFAULT_DAYS = 7
@@ -60,7 +70,7 @@ def initialize_session_state():
         "round": 0,
         "total_budget": DEFAULT_BUDGET,
         "trip_days": DEFAULT_DAYS,
-        "num_travelers": DEFAULT_TRAVELERS,  # NEU: Anzahl Reisende
+        "num_travelers": DEFAULT_TRAVELERS,
         "travel_style": "balanced",
         "temp_preference": (15, 28),
         "use_weather": True,
@@ -155,7 +165,6 @@ def get_score_label(score: float) -> str:
 def render_destination_card(loc: Dict[str, Any], index: int):
     """Renders a destination card with flight price."""
     with st.container():
-        # Breitere Spalten für die Zahlen
         col1, col2, col3, col4 = st.columns([2.5, 1, 1.8, 1.2])
         
         with col1:
@@ -170,7 +179,6 @@ def render_destination_card(loc: Dict[str, Any], index: int):
             st.metric("Safety", f"{safety}/5")
         
         with col3:
-            # Flugpreis anzeigen (pro Person)
             flight = loc.get('flight_price')
             if flight:
                 st.metric("✈️ Flight/Person", f"{flight} CHF")
@@ -178,7 +186,6 @@ def render_destination_card(loc: Dict[str, Any], index: int):
                 st.metric("✈️ Flight", "N/A")
         
         with col4:
-            # Tagesbudget anzeigen (pro Person)
             daily = loc.get('avg_budget_per_day', 0)
             st.metric("📅 /Day/Person", f"{int(daily)} CHF")
         
@@ -309,7 +316,6 @@ def render_start_page():
     """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
-    # NEU: 3 Spalten statt 2 für Travelers
     col1, col2, col3 = st.columns(3)
     with col1:
         total_budget = st.number_input(
@@ -337,14 +343,13 @@ def render_start_page():
             help="How many people are traveling?"
         )
     
-    # NEU: Angepasste Info-Anzeige mit Personenanzahl
     if trip_days > 0:
         travelers_text = "person" if num_travelers == 1 else "people"
         st.info(f"💵 Total budget: **CHF {total_budget}** for **{num_travelers} {travelers_text}** over **{trip_days} days** (including flights)")
     
     st.divider()
     
-    st.subheader("🎨 What's Your Travel Style? ")
+    st.subheader("🎨 What's Your Travel Style?")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -417,7 +422,6 @@ def render_start_page():
     
     if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
-            # NEU: num_travelers wird übergeben
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
@@ -433,7 +437,7 @@ def render_start_page():
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
                 st.session_state.trip_days = trip_days
-                st.session_state.num_travelers = num_travelers  # NEU: Speichern
+                st.session_state.num_travelers = num_travelers
                 st.session_state.id_used = []
                 st.session_state.chosen = []
                 st.session_state.round = 0
@@ -519,7 +523,7 @@ def render_results_page():
     travel_style = st.session_state.get("travel_style", "balanced")
     use_weather = st.session_state.get("use_weather", True)
     trip_days = st.session_state.get("trip_days", 7)
-    num_travelers = st.session_state.get("num_travelers", 1)  # NEU
+    num_travelers = st.session_state.get("num_travelers", 1)
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -568,18 +572,16 @@ def render_results_page():
         
         st.divider()
         
-        # === NEU: Kostenaufschlüsselung mit Personenanzahl ===
+        # Cost Breakdown
         st.subheader("💰 Cost Breakdown")
         
         flight_price = best.get('flight_price') or 0
         daily_budget = best.get('avg_budget_per_day') or 0
         
-        # Berechnung für alle Reisenden
         flight_total = flight_price * num_travelers
         accommodation_food = daily_budget * trip_days * num_travelers
         total_cost = flight_total + accommodation_food
         
-        # Info über Gruppenberechnung
         if num_travelers > 1:
             st.info(f"💡 Costs calculated for **{num_travelers} travelers** over **{trip_days} days**")
         
@@ -617,12 +619,127 @@ def render_results_page():
         
         st.divider()
         
-        with st.expander("📊 Match Score Details"):
+        # === VISUALISIERUNGEN ===
+        st.subheader("📊 Visual Insights")
+        
+        # Berechne Preference und Breakdown für Charts
+        preference = preference_vector(st.session_state.chosen)
+        feature_ranges = calculate_feature_ranges(st.session_state.budget_matches)
+        weights = get_travel_style_weights(travel_style)
+        breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
+        
+        # Tabs für verschiedene Visualisierungen
+        viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
+            "🎯 Preference Profile", 
+            "📈 Score Breakdown", 
+            "🏆 Top Destinations",
+            "💰 Budget & Weather"
+        ])
+        
+        with viz_tab1:
+            # Radar Chart - User Preferences
+            radar_fig = create_preference_radar_chart(
+                preference, 
+                title="Your Travel Preference Profile"
+            )
+            if radar_fig:
+                st.plotly_chart(radar_fig, use_container_width=True)
+            
+            # Comparison Radar - Preferences vs Best Destination
+            st.write("---")
+            st.write("**How does your top match compare? **")
+            
+            dest_values = {
+                k: best.get(k, 0) 
+                for k in FEATURE_CONFIG.keys() 
+                if best.get(k) is not None
+            }
+            comparison_fig = create_comparison_radar_chart(
+                preference,
+                dest_values,
+                destination_name=f"{best['city']}, {best['country']}",
+                title="Your Preferences vs Top Destination"
+            )
+            if comparison_fig:
+                st.plotly_chart(comparison_fig, use_container_width=True)
+        
+        with viz_tab2:
+            # Score Breakdown Bar Chart
+            breakdown_fig = create_score_breakdown_chart(
+                breakdown,
+                title=f"Why {best['city']} Matches You"
+            )
+            if breakdown_fig:
+                st.plotly_chart(breakdown_fig, use_container_width=True)
+            
+            # Score gauges
+            st.write("---")
+            gauge_col1, gauge_col2, gauge_col3 = st.columns(3)
+            
+            with gauge_col1:
+                overall_gauge = create_score_gauge(
+                    best.get('combined_score', 0),
+                    title="Overall Score"
+                )
+                if overall_gauge:
+                    st.plotly_chart(overall_gauge, use_container_width=True)
+            
+            with gauge_col2:
+                match_gauge = create_score_gauge(
+                    best.get('match_score', 0),
+                    title="Match Score"
+                )
+                if match_gauge:
+                    st.plotly_chart(match_gauge, use_container_width=True)
+            
+            with gauge_col3:
+                if use_weather:
+                    weather_gauge = create_score_gauge(
+                        best.get('weather_score', 50),
+                        title="Weather Score"
+                    )
+                    if weather_gauge:
+                        st.plotly_chart(weather_gauge, use_container_width=True)
+        
+        with viz_tab3:
+            # Top Destinations Comparison
+            top_dest_fig = create_top_destinations_chart(
+                ranked,
+                num_destinations=7,
+                title="Top 7 Matching Destinations"
+            )
+            if top_dest_fig:
+                st.plotly_chart(top_dest_fig, use_container_width=True)
+        
+        with viz_tab4:
+            # Budget Comparison Chart
+            budget_fig = create_budget_comparison_chart(
+                ranked,
+                st.session_state.total_budget,
+                num_travelers,
+                trip_days,
+                num_destinations=5,
+                title="Cost Breakdown by Destination"
+            )
+            if budget_fig:
+                st.plotly_chart(budget_fig, use_container_width=True)
+            
+            # Weather Chart
+            if use_weather:
+                st.write("---")
+                weather_fig = create_weather_score_chart(
+                    ranked,
+                    num_destinations=5,
+                    title="Weather Compatibility Scores"
+                )
+                if weather_fig:
+                    st.plotly_chart(weather_fig, use_container_width=True)
+        
+        st.divider()
+        
+        # Expanders für Details
+        with st.expander("📊 Match Score Details (Text)"):
             st.write("How well this destination matches your preferences:")
-            preference = preference_vector(st.session_state.chosen)
-            feature_ranges = calculate_feature_ranges(st.session_state.budget_matches)
-            weights = get_travel_style_weights(travel_style)
-            breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
             render_score_breakdown(breakdown)
         
         with st.expander("🔍 Your Travel Insights"):
@@ -636,18 +753,16 @@ def render_results_page():
         with st.expander("🔍 Full Destination Details"):
             st.json(best)
         
-        # Other Great Options mit Flugpreisen für Gruppe
+        # Other Great Options
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
             
             for i, dest in enumerate(ranked[1:6], 2):
                 combined = dest.get('combined_score', 0)
-                match = dest.get('match_score', 0)
                 flight = dest.get('flight_price') or 0
                 daily = dest.get('avg_budget_per_day') or 0
                 
-                # NEU: Berechnung für alle Reisenden
                 total = (flight * num_travelers) + (daily * trip_days * num_travelers)
                 color = get_score_color(combined)
                 
@@ -714,13 +829,13 @@ def main():
         st.write(f"State: {st.session_state.state}")
         st.write(f"Round: {st.session_state.round}/{ROUNDS}")
         st.write(f"Selections: {len(st.session_state.chosen)}")
-        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")  # NEU
+        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
         st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
         weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
         st.write(f"Weather: {weather_status}")
         
         st.divider()
-        st.caption("Travel Recommender v2.1")  # Version erhöht
+        st.caption("Travel Recommender v2.1")
         st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
