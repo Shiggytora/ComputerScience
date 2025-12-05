@@ -2,11 +2,11 @@
 Matching Module - Core Recommendation Engine
 
 This module implements the matching algorithm that learns user preferences
-from their choices and calculates compatibility scores for all destinations. 
+from their choices and calculates compatibility scores for all destinations.
 
 The algorithm uses:
 1. Preference learning from user selections
-2.  Weighted feature similarity scoring
+2. Weighted feature similarity scoring
 3. Travel style adjustments
 4. Weather integration (optional)
 
@@ -241,18 +241,30 @@ TRAVEL_STYLES = {
 # HELPER FUNCTIONS
 # =============================================================================
 
-def filter_by_budget(total_budget: float, trip_days: int) -> List[Dict[str, Any]]:
+def filter_by_budget(
+    total_budget: float, 
+    trip_days: int, 
+    num_travelers: int = 1
+) -> List[Dict[str, Any]]:
     """
-    Filters destinations based on user's budget. 
+    Filters destinations based on user's budget for all travelers.
+    
+    This function wraps the data module's budget filtering and provides
+    a fallback to all destinations if no matches are found.
     
     Args:
-        total_budget: Total trip budget in CHF
+        total_budget: Total trip budget in CHF for ALL travelers combined
         trip_days: Number of days for the trip
+        num_travelers: Number of people traveling (default: 1)
         
     Returns:
         List of matching destination dictionaries
+        
+    Example:
+        >>> matches = filter_by_budget(6000, 10, 2)
+        >>> # Returns destinations affordable for 2 people over 10 days
     """
-    budget_matches = get_destinations_by_budget(total_budget, trip_days)
+    budget_matches = get_destinations_by_budget(total_budget, trip_days, num_travelers)
     
     # Fallback to all destinations if no budget matches
     if not budget_matches:
@@ -393,10 +405,10 @@ def calculate_match_score(
     Calculates match score between a destination and user preferences.
     
     Algorithm:
-    1.  Normalize both destination and preference values to 0-1
+    1. Normalize both destination and preference values to 0-1
     2. Calculate similarity as 1 - |normalized_dest - normalized_pref|
     3. Apply weights (negative weights invert the similarity)
-    4.  Return weighted average as percentage (0-100)
+    4. Return weighted average as percentage (0-100)
     
     Args:
         destination: Destination dictionary with features
@@ -461,7 +473,7 @@ def calculate_combined_score(
     weather_weight: float = 0.2
 ) -> float:
     """
-    Combines match score with weather score for final ranking.
+    Combines match score with weather score for final ranking. 
     
     Args:
         destination: Destination with optional weather_score field
@@ -493,9 +505,9 @@ def ranking_destinations(
     Ranks all destinations based on user preferences.
     
     This is the main recommendation function that:
-    1.  Learns user preferences from their choices
-    2.  Applies travel style weights
-    3.  Calculates match scores for all destinations
+    1. Learns user preferences from their choices
+    2. Applies travel style weights
+    3. Calculates match scores for all destinations
     4. Optionally incorporates weather data
     5. Returns sorted list with best matches first
     

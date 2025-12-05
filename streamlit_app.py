@@ -33,6 +33,9 @@ DEFAULT_BUDGET = 3000  # Erhöht für Flugkosten
 MIN_DAYS = 1
 MAX_DAYS = 60
 DEFAULT_DAYS = 7
+MIN_TRAVELERS = 1
+MAX_TRAVELERS = 10
+DEFAULT_TRAVELERS = 1
 LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
 
@@ -57,6 +60,7 @@ def initialize_session_state():
         "round": 0,
         "total_budget": DEFAULT_BUDGET,
         "trip_days": DEFAULT_DAYS,
+        "num_travelers": DEFAULT_TRAVELERS,  # NEU: Anzahl Reisende
         "travel_style": "balanced",
         "temp_preference": (15, 28),
         "use_weather": True,
@@ -166,17 +170,17 @@ def render_destination_card(loc: Dict[str, Any], index: int):
             st.metric("Safety", f"{safety}/5")
         
         with col3:
-            # Flugpreis anzeigen
-            flight = loc. get('flight_price')
+            # Flugpreis anzeigen (pro Person)
+            flight = loc.get('flight_price')
             if flight:
-                st.metric("✈️ Flight (Two-way in CHF)", f"{flight}")
+                st.metric("✈️ Flight/Person", f"{flight} CHF")
             else:
                 st.metric("✈️ Flight", "N/A")
         
         with col4:
-            # Tagesbudget anzeigen
+            # Tagesbudget anzeigen (pro Person)
             daily = loc.get('avg_budget_per_day', 0)
-            st.metric("📅 /Day (CHF)", f"{int(daily)}")
+            st.metric("📅 /Day/Person", f"{int(daily)} CHF")
         
         st.divider()
 
@@ -305,7 +309,8 @@ def render_start_page():
     """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
-    col1, col2 = st.columns(2)
+    # NEU: 3 Spalten statt 2 für Travelers
+    col1, col2, col3 = st.columns(3)
     with col1:
         total_budget = st.number_input(
             "💰 Total Budget (CHF)",
@@ -313,7 +318,7 @@ def render_start_page():
             max_value=MAX_BUDGET,
             value=st.session_state.total_budget,
             step=100,
-            help="Enter your total travel budget including flights"
+            help="Enter your total travel budget including flights for ALL travelers"
         )
     with col2:
         trip_days = st.number_input(
@@ -323,13 +328,23 @@ def render_start_page():
             value=st.session_state.trip_days,
             help="How many days will you be traveling?"
         )
+    with col3:
+        num_travelers = st.number_input(
+            "👥 Number of Travelers",
+            min_value=MIN_TRAVELERS,
+            max_value=MAX_TRAVELERS,
+            value=st.session_state.num_travelers,
+            help="How many people are traveling?"
+        )
     
+    # NEU: Angepasste Info-Anzeige mit Personenanzahl
     if trip_days > 0:
-        st.info(f"💵 Total budget: **CHF {total_budget}** for **{trip_days} days** (including flights)")
+        travelers_text = "person" if num_travelers == 1 else "people"
+        st.info(f"💵 Total budget: **CHF {total_budget}** for **{num_travelers} {travelers_text}** over **{trip_days} days** (including flights)")
     
     st.divider()
     
-    st.subheader("🎨 What's Your Travel Style?")
+    st.subheader("🎨 What's Your Travel Style? ")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -402,10 +417,11 @@ def render_start_page():
     
     if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
-            matches = filter_by_budget(total_budget, trip_days)
+            # NEU: num_travelers wird übergeben
+            matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
-                st.error("❌ No destinations found within your budget.  Try increasing your budget.")
+                st.error("❌ No destinations found within your budget.  Try increasing your budget or reducing travelers.")
             else:
                 if use_weather:
                     matches = enrich_destinations_with_weather(
@@ -417,11 +433,13 @@ def render_start_page():
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
                 st.session_state.trip_days = trip_days
+                st.session_state.num_travelers = num_travelers  # NEU: Speichern
                 st.session_state.id_used = []
                 st.session_state.chosen = []
                 st.session_state.round = 0
                 st.session_state.state = "Matching"
-                st.success(f"✅ Found {len(matches)} destinations!")
+                travelers_text = "traveler" if num_travelers == 1 else "travelers"
+                st.success(f"✅ Found {len(matches)} destinations for {num_travelers} {travelers_text}!")
                 st.rerun()
 
 
@@ -430,8 +448,11 @@ def render_matching_page():
     render_progress_bar()
     
     current_style = st.session_state.get("travel_style", "balanced")
+    num_travelers = st.session_state.get("num_travelers", 1)
+    
     if current_style in TRAVEL_STYLES:
-        st.caption(f"Travel Style: {TRAVEL_STYLES[current_style]['name']}")
+        travelers_text = "traveler" if num_travelers == 1 else "travelers"
+        st.caption(f"Travel Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers} {travelers_text}")
     
     current_display_round = st.session_state.round + 1
     st.subheader(f"🎲 Round {current_display_round} of {ROUNDS}")
@@ -498,6 +519,7 @@ def render_results_page():
     travel_style = st.session_state.get("travel_style", "balanced")
     use_weather = st.session_state.get("use_weather", True)
     trip_days = st.session_state.get("trip_days", 7)
+    num_travelers = st.session_state.get("num_travelers", 1)  # NEU
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -515,7 +537,8 @@ def render_results_page():
         st.write("Based on your preferences, this is your ideal destination!")
         
         if travel_style in TRAVEL_STYLES:
-            st.caption(f"Based on travel style: {TRAVEL_STYLES[travel_style]['name']}")
+            travelers_text = "traveler" if num_travelers == 1 else "travelers"
+            st.caption(f"Based on travel style: {TRAVEL_STYLES[travel_style]['name']} | 👥 {num_travelers} {travelers_text}")
         
         st.divider()
         
@@ -545,21 +568,42 @@ def render_results_page():
         
         st.divider()
         
-        # === NEU: Kostenaufschlüsselung ===
+        # === NEU: Kostenaufschlüsselung mit Personenanzahl ===
         st.subheader("💰 Cost Breakdown")
         
         flight_price = best.get('flight_price') or 0
         daily_budget = best.get('avg_budget_per_day') or 0
-        accommodation_food = daily_budget * trip_days
-        total_cost = flight_price + accommodation_food
+        
+        # Berechnung für alle Reisenden
+        flight_total = flight_price * num_travelers
+        accommodation_food = daily_budget * trip_days * num_travelers
+        total_cost = flight_total + accommodation_food
+        
+        # Info über Gruppenberechnung
+        if num_travelers > 1:
+            st.info(f"💡 Costs calculated for **{num_travelers} travelers** over **{trip_days} days**")
         
         cost_col1, cost_col2, cost_col3, cost_col4 = st.columns(4)
         
         with cost_col1:
-            st.metric("✈️ Flight (round-trip)", f"CHF {flight_price}")
+            if num_travelers > 1:
+                st.metric(
+                    "✈️ Flights (round-trip)", 
+                    f"CHF {int(flight_total)}",
+                    help=f"CHF {flight_price} × {num_travelers} travelers"
+                )
+            else:
+                st.metric("✈️ Flight (round-trip)", f"CHF {flight_price}")
         
         with cost_col2:
-            st.metric(f"🏨 {trip_days} Days × CHF {daily_budget}", f"CHF {int(accommodation_food)}")
+            if num_travelers > 1:
+                st.metric(
+                    f"🏨 Accommodation & Food",
+                    f"CHF {int(accommodation_food)}",
+                    help=f"CHF {daily_budget}/day × {trip_days} days × {num_travelers} travelers"
+                )
+            else:
+                st.metric(f"🏨 {trip_days} Days × CHF {daily_budget}", f"CHF {int(accommodation_food)}")
         
         with cost_col3:
             st.metric("💵 Total Trip Cost", f"CHF {int(total_cost)}")
@@ -592,7 +636,7 @@ def render_results_page():
         with st.expander("🔍 Full Destination Details"):
             st.json(best)
         
-        # Other Great Options mit Flugpreisen
+        # Other Great Options mit Flugpreisen für Gruppe
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
@@ -601,7 +645,10 @@ def render_results_page():
                 combined = dest.get('combined_score', 0)
                 match = dest.get('match_score', 0)
                 flight = dest.get('flight_price') or 0
-                total = dest.get('total_trip_cost') or 0
+                daily = dest.get('avg_budget_per_day') or 0
+                
+                # NEU: Berechnung für alle Reisenden
+                total = (flight * num_travelers) + (daily * trip_days * num_travelers)
                 color = get_score_color(combined)
                 
                 col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
@@ -610,7 +657,10 @@ def render_results_page():
                 with col2:
                     st.write(f"{color} {combined}%")
                 with col3:
-                    st.caption(f"✈️ CHF {flight}")
+                    if num_travelers > 1:
+                        st.caption(f"✈️ CHF {flight * num_travelers}")
+                    else:
+                        st.caption(f"✈️ CHF {flight}")
                 with col4:
                     st.caption(f"💰 CHF {int(total)}")
         
@@ -664,12 +714,13 @@ def main():
         st.write(f"State: {st.session_state.state}")
         st.write(f"Round: {st.session_state.round}/{ROUNDS}")
         st.write(f"Selections: {len(st.session_state.chosen)}")
+        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")  # NEU
         st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
         weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
         st.write(f"Weather: {weather_status}")
         
         st.divider()
-        st.caption("Travel Recommender v2.0")
+        st.caption("Travel Recommender v2.1")  # Version erhöht
         st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
