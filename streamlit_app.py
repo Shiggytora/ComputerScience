@@ -4,6 +4,7 @@ Travel Matching Application - Main Streamlit Application
 
 import streamlit as st
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
 # Import custom modules
 from src.matching import (
@@ -18,7 +19,10 @@ from src.matching import (
     DEFAULT_WEIGHTS,
     TRAVEL_STYLES,
 )
-from src.weather_matching import enrich_destinations_with_weather
+from src.weather_matching import (
+    enrich_destinations_with_weather,
+    enrich_destinations_with_forecast,
+)
 from src.insights import generate_preference_insights
 from src.session_manager import export_session, get_export_filename
 from src.visuals import (
@@ -29,6 +33,8 @@ from src.visuals import (
     create_budget_comparison_chart,
     create_weather_score_chart,
     create_score_gauge,
+    create_destinations_map,
+    create_route_map,
     FEATURE_CONFIG,
 )
 
@@ -48,6 +54,13 @@ MAX_TRAVELERS = 10
 DEFAULT_TRAVELERS = 1
 LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
+
+# Origin city for route map (Zurich as default)
+DEFAULT_ORIGIN = {
+    "city": "Zurich",
+    "latitude": 47.3769,
+    "longitude": 8.5417
+}
 
 st.set_page_config(
     page_title="Travel Matching",
@@ -75,6 +88,9 @@ def initialize_session_state():
         "temp_preference": (15, 28),
         "use_weather": True,
         "weather_cache": {},
+        "travel_date_start": None,
+        "travel_date_end": None,
+        "use_forecast": False,
     }
     
     for key, value in defaults.items():
@@ -163,7 +179,7 @@ def get_score_label(score: float) -> str:
 
 
 def render_destination_card(loc: Dict[str, Any], index: int):
-    """Renders a destination card with flight price."""
+    """Renders a destination card with flight price and weather info."""
     with st.container():
         col1, col2, col3, col4 = st.columns([2.5, 1, 1.8, 1.2])
         
@@ -171,8 +187,13 @@ def render_destination_card(loc: Dict[str, Any], index: int):
             st.markdown(f"### {loc['city']}")
             st.caption(f"📍 {loc['country']}")
             
-            if 'current_temp' in loc and loc['current_temp'] is not None:
-                st.caption(f"🌡️ {loc['current_temp']}°C")
+            # Show forecast or current temp
+            if loc.get('forecast_temp') is not None:
+                st.caption(f"🌡️ Forecast: {loc['forecast_temp']}°C")
+                if loc.get('rain_days', 0) > 0:
+                    st.caption(f"🌧️ {loc['rain_days']} rainy days expected")
+            elif loc.get('current_temp') is not None:
+                st.caption(f"🌡️ Now: {loc['current_temp']}°C")
         
         with col2:
             safety = loc.get('safety', 'N/A')
@@ -316,6 +337,7 @@ def render_start_page():
     """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
+    # Trip basics
     col1, col2, col3 = st.columns(3)
     with col1:
         total_budget = st.number_input(
@@ -349,6 +371,49 @@ def render_start_page():
     
     st.divider()
     
+    # === Reisedatum Auswahl ===
+    st.subheader("📅 When do you want to travel? ")
+    
+    date_col1, date_col2 = st.columns(2)
+    
+    with date_col1:
+        default_start = datetime.now() + timedelta(days=14)
+        travel_date_start = st.date_input(
+            "Departure Date",
+            value=default_start,
+            min_value=datetime.now().date(),
+            max_value=datetime.now().date() + timedelta(days=365),
+            help="When do you plan to start your trip?"
+        )
+    
+    with date_col2:
+        travel_date_end = st.date_input(
+            "Return Date",
+            value=travel_date_start + timedelta(days=trip_days),
+            min_value=travel_date_start,
+            max_value=travel_date_start + timedelta(days=MAX_DAYS),
+            help="When do you plan to return?"
+        )
+    
+    # Calculate days between dates
+    actual_days = (travel_date_end - travel_date_start).days
+    if actual_days != trip_days:
+        st.caption(f"📆 Trip duration: {actual_days} days")
+        trip_days = actual_days
+    
+    # Info about weather data availability
+    days_until_travel = (travel_date_start - datetime.now().date()).days
+    
+    if days_until_travel <= 16 and days_until_travel >= 0:
+        st.success("✅ Weather forecast available for your travel dates!")
+    elif days_until_travel > 16:
+        st.warning(f"⚠️ Travel date is {days_until_travel} days away.  Using current weather data as estimate.")
+    else:
+        st.info("ℹ️ Using current weather data.")
+    
+    st.divider()
+    
+    # Travel Style
     st.subheader("🎨 What's Your Travel Style?")
     
     style_options = list(TRAVEL_STYLES.keys())
@@ -390,12 +455,13 @@ def render_start_page():
     
     st.divider()
     
+    # Weather preferences
     st.subheader("🌡️ Preferred Temperature")
     
     use_weather = st.checkbox(
         "Include weather in recommendations",
         value=st.session_state.get("use_weather", True),
-        help="Uses real-time weather data from Open-Meteo API"
+        help="Uses weather forecast or current data from Open-Meteo API"
     )
     st.session_state.use_weather = use_weather
     
@@ -420,30 +486,57 @@ def render_start_page():
     
     st.divider()
     
+    # Start button
     if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
-                st.error("❌ No destinations found within your budget.  Try increasing your budget or reducing travelers.")
+                st.error("❌ No destinations found within your budget. Try increasing your budget or reducing travelers.")
             else:
-                if use_weather:
-                    matches = enrich_destinations_with_weather(
-                        matches,
-                        st.session_state.temp_preference,
-                        show_progress=True
-                    )
+                # Calculate if forecast is available
+                days_until = (travel_date_start - datetime.now().date()).days
+                can_use_forecast = 0 <= days_until <= 16
                 
+                # Enrich with weather data
+                if use_weather:
+                    start_str = travel_date_start.strftime("%Y-%m-%d")
+                    end_str = travel_date_end.strftime("%Y-%m-%d")
+                    
+                    if can_use_forecast:
+                        matches = enrich_destinations_with_forecast(
+                            matches,
+                            st.session_state.temp_preference,
+                            start_str,
+                            end_str,
+                            show_progress=True
+                        )
+                        st.session_state.use_forecast = True
+                    else:
+                        matches = enrich_destinations_with_weather(
+                            matches,
+                            st.session_state.temp_preference,
+                            show_progress=True
+                        )
+                        st.session_state.use_forecast = False
+                else:
+                    st.session_state.use_forecast = False
+                
+                # Save to session state
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
                 st.session_state.trip_days = trip_days
                 st.session_state.num_travelers = num_travelers
+                st.session_state.travel_date_start = travel_date_start
+                st.session_state.travel_date_end = travel_date_end
                 st.session_state.id_used = []
                 st.session_state.chosen = []
                 st.session_state.round = 0
                 st.session_state.state = "Matching"
+                
                 travelers_text = "traveler" if num_travelers == 1 else "travelers"
-                st.success(f"✅ Found {len(matches)} destinations for {num_travelers} {travelers_text}!")
+                weather_info = "with forecast" if st.session_state.use_forecast else "with current weather"
+                st.success(f"✅ Found {len(matches)} destinations for {num_travelers} {travelers_text} {weather_info}!")
                 st.rerun()
 
 
@@ -453,10 +546,18 @@ def render_matching_page():
     
     current_style = st.session_state.get("travel_style", "balanced")
     num_travelers = st.session_state.get("num_travelers", 1)
+    travel_date = st.session_state.get("travel_date_start")
+    use_forecast = st.session_state.get("use_forecast", False)
     
+    # Show trip info
     if current_style in TRAVEL_STYLES:
         travelers_text = "traveler" if num_travelers == 1 else "travelers"
-        st.caption(f"Travel Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers} {travelers_text}")
+        info_text = f"Travel Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers} {travelers_text}"
+        if travel_date:
+            info_text += f" | 📅 {travel_date.strftime('%b %d, %Y')}"
+        if use_forecast:
+            info_text += " | 🌤️ Forecast"
+        st.caption(info_text)
     
     current_display_round = st.session_state.round + 1
     st.subheader(f"🎲 Round {current_display_round} of {ROUNDS}")
@@ -524,6 +625,9 @@ def render_results_page():
     use_weather = st.session_state.get("use_weather", True)
     trip_days = st.session_state.get("trip_days", 7)
     num_travelers = st.session_state.get("num_travelers", 1)
+    travel_date_start = st.session_state.get("travel_date_start")
+    travel_date_end = st.session_state.get("travel_date_end")
+    use_forecast = st.session_state.get("use_forecast", False)
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -540,9 +644,41 @@ def render_results_page():
         st.success(f"### 🏆 {best['city']}, {best['country']}")
         st.write("Based on your preferences, this is your ideal destination!")
         
+        # Trip info caption
         if travel_style in TRAVEL_STYLES:
             travelers_text = "traveler" if num_travelers == 1 else "travelers"
-            st.caption(f"Based on travel style: {TRAVEL_STYLES[travel_style]['name']} | 👥 {num_travelers} {travelers_text}")
+            info_text = f"Travel style: {TRAVEL_STYLES[travel_style]['name']} | 👥 {num_travelers} {travelers_text}"
+            if travel_date_start and travel_date_end:
+                info_text += f" | 📅 {travel_date_start.strftime('%b %d')} - {travel_date_end.strftime('%b %d, %Y')}"
+            if use_forecast:
+                info_text += " | 🌤️ Using weather forecast"
+            st.caption(info_text)
+        
+        st.divider()
+        
+        # === WORLD MAP ===
+        st.subheader("🗺️ Your Destinations on the Map")
+        
+        map_tab1, map_tab2 = st.tabs(["🌍 All Matches", "✈️ Your Journey"])
+        
+        with map_tab1:
+            destinations_map = create_destinations_map(
+                ranked[:20],
+                highlight_best=True,
+                title="Top Matching Destinations"
+            )
+            if destinations_map:
+                st.plotly_chart(destinations_map, use_container_width=True)
+                st.caption("🥇 Gold = Best match | Larger markers = Higher scores")
+        
+        with map_tab2:
+            route_map = create_route_map(
+                DEFAULT_ORIGIN,
+                best,
+                title=f"Zurich → {best['city']}, {best['country']}"
+            )
+            if route_map:
+                st.plotly_chart(route_map, use_container_width=True)
         
         st.divider()
         
@@ -561,14 +697,29 @@ def render_results_page():
             if use_weather:
                 weather_score = best.get('weather_score', 50)
                 w_color = get_score_color(weather_score)
-                st.metric("🌤️ Weather Score", f"{w_color} {weather_score}%")
+                weather_label = "🌤️ Forecast Score" if use_forecast else "🌤️ Weather Score"
+                st.metric(weather_label, f"{w_color} {weather_score}%")
         
         with col3:
             safety = best.get('safety', 'N/A')
             st.metric("Safety Rating", f"🛡️ {safety}/5")
             
-            if 'current_temp' in best and best['current_temp'] is not None:
+            # Show forecast or current temp
+            if use_forecast and best.get('forecast_temp') is not None:
+                st.metric("📅 Forecast Temp", f"🌡️ {best['forecast_temp']}°C")
+                if best.get('forecast_min') and best.get('forecast_max'):
+                    st.caption(f"Range: {best['forecast_min']}°C - {best['forecast_max']}°C")
+            elif best.get('current_temp') is not None:
                 st.metric("Current Weather", f"🌡️ {best['current_temp']}°C")
+        
+        # Rain warning (nur bei Forecast)
+        if use_forecast and best.get('rain_days', 0) > 0:
+            total_days = best.get('total_days', trip_days)
+            rain_pct = (best['rain_days'] / total_days) * 100
+            if rain_pct > 50:
+                st.warning(f"🌧️ Expect rain on {best['rain_days']} of {total_days} days ({rain_pct:.0f}%)")
+            else:
+                st.info(f"🌧️ Light rain expected on {best['rain_days']} of {total_days} days")
         
         st.divider()
         
@@ -600,7 +751,7 @@ def render_results_page():
         with cost_col2:
             if num_travelers > 1:
                 st.metric(
-                    f"🏨 Accommodation & Food",
+                    "🏨 Accommodation & Food",
                     f"CHF {int(accommodation_food)}",
                     help=f"CHF {daily_budget}/day × {trip_days} days × {num_travelers} travelers"
                 )
@@ -622,13 +773,11 @@ def render_results_page():
         # === VISUALISIERUNGEN ===
         st.subheader("📊 Visual Insights")
         
-        # Berechne Preference und Breakdown für Charts
         preference = preference_vector(st.session_state.chosen)
         feature_ranges = calculate_feature_ranges(st.session_state.budget_matches)
         weights = get_travel_style_weights(travel_style)
         breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
         
-        # Tabs für verschiedene Visualisierungen
         viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
             "🎯 Preference Profile", 
             "📈 Score Breakdown", 
@@ -637,7 +786,6 @@ def render_results_page():
         ])
         
         with viz_tab1:
-            # Radar Chart - User Preferences
             radar_fig = create_preference_radar_chart(
                 preference, 
                 title="Your Travel Preference Profile"
@@ -645,7 +793,6 @@ def render_results_page():
             if radar_fig:
                 st.plotly_chart(radar_fig, use_container_width=True)
             
-            # Comparison Radar - Preferences vs Best Destination
             st.write("---")
             st.write("**How does your top match compare? **")
             
@@ -664,7 +811,6 @@ def render_results_page():
                 st.plotly_chart(comparison_fig, use_container_width=True)
         
         with viz_tab2:
-            # Score Breakdown Bar Chart
             breakdown_fig = create_score_breakdown_chart(
                 breakdown,
                 title=f"Why {best['city']} Matches You"
@@ -672,7 +818,6 @@ def render_results_page():
             if breakdown_fig:
                 st.plotly_chart(breakdown_fig, use_container_width=True)
             
-            # Score gauges
             st.write("---")
             gauge_col1, gauge_col2, gauge_col3 = st.columns(3)
             
@@ -702,7 +847,6 @@ def render_results_page():
                         st.plotly_chart(weather_gauge, use_container_width=True)
         
         with viz_tab3:
-            # Top Destinations Comparison
             top_dest_fig = create_top_destinations_chart(
                 ranked,
                 num_destinations=7,
@@ -712,7 +856,6 @@ def render_results_page():
                 st.plotly_chart(top_dest_fig, use_container_width=True)
         
         with viz_tab4:
-            # Budget Comparison Chart
             budget_fig = create_budget_comparison_chart(
                 ranked,
                 st.session_state.total_budget,
@@ -724,7 +867,6 @@ def render_results_page():
             if budget_fig:
                 st.plotly_chart(budget_fig, use_container_width=True)
             
-            # Weather Chart
             if use_weather:
                 st.write("---")
                 weather_fig = create_weather_score_chart(
@@ -737,7 +879,7 @@ def render_results_page():
         
         st.divider()
         
-        # Expanders für Details
+        # Expanders
         with st.expander("📊 Match Score Details (Text)"):
             st.write("How well this destination matches your preferences:")
             render_score_breakdown(breakdown)
@@ -802,7 +944,7 @@ def render_results_page():
                 st.info("🚧 Share feature coming soon!")
     
     else:
-        st.error("❌ Unable to generate recommendations. Please try again.")
+        st.error("❌ Unable to generate recommendations.  Please try again.")
         if st.button("🔄 Start Over", type="primary"):
             reset_session_state()
             st.rerun()
@@ -831,11 +973,23 @@ def main():
         st.write(f"Selections: {len(st.session_state.chosen)}")
         st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
         st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
+        
+        # Show travel dates if set
+        travel_date = st.session_state.get('travel_date_start')
+        if travel_date:
+            st.write(f"📅 Departure: {travel_date.strftime('%b %d, %Y')}")
+        
         weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
         st.write(f"Weather: {weather_status}")
         
+        # Show forecast status
+        if st.session_state.get("use_forecast"):
+            st.caption("📡 Using weather forecast")
+        elif st.session_state.get("use_weather"):
+            st.caption("🌡️ Using current weather")
+        
         st.divider()
-        st.caption("Travel Recommender v2.1")
+        st.caption("Travel Recommender v2.2")
         st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
