@@ -37,6 +37,11 @@ from src.visuals import (
     create_route_map,
     FEATURE_CONFIG,
 )
+from src.attractions import (
+    render_attractions_section,
+    render_attractions_compact,
+    get_attractions_summary,
+)
 
 # =============================================================================
 # CONFIGURATION
@@ -841,6 +846,12 @@ def render_results_page():
         
         st.divider()
         
+        # === ATTRACTIONS SECTION (NEU!) ===
+        with st.expander("🎯 Top Attractions & Things To Do", expanded=True):
+            render_attractions_section(best, num_attractions=8)
+        
+        st.divider()
+        
         # === ÄHNLICHE DESTINATIONEN ===
         similar_destinations = find_similar_destinations(
             best,
@@ -991,7 +1002,7 @@ def render_results_page():
                 
                 col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
-                    st.write(f"**{i}. ** {dest['city']}, {dest['country']}")
+                    st.write(f"**{i}.** {dest['city']}, {dest['country']}")
                 with col2:
                     st.write(f"{color} {combined}%")
                 with col3:
@@ -1070,7 +1081,7 @@ def main():
             st.caption("🌡️ Using current weather")
         
         st.divider()
-        st.caption("Travel Recommender v2.3")
+        st.caption("Travel Recommender v2.4")
         st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
