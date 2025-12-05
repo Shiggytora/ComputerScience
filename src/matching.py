@@ -2,7 +2,7 @@
 Matching Module - Core Recommendation Engine
 
 This module implements the matching algorithm that learns user preferences
-from their choices and calculates compatibility scores for all destinations.
+from their choices and calculates compatibility scores for all destinations. 
 
 The algorithm uses:
 1. Preference learning from user selections
@@ -473,7 +473,7 @@ def calculate_combined_score(
     weather_weight: float = 0.2
 ) -> float:
     """
-    Combines match score with weather score for final ranking. 
+    Combines match score with weather score for final ranking.
     
     Args:
         destination: Destination with optional weather_score field
@@ -619,6 +619,7 @@ def get_match_breakdown(
     
     return breakdown
 
+
 # =============================================================================
 # SIMILAR DESTINATIONS
 # =============================================================================
@@ -706,12 +707,12 @@ def calculate_recommendation_confidence(
     Calculates how confident the recommendation is based on score distribution.
     
     High confidence means there's a clear winner with a significant gap
-    between the top match and alternatives.  Low confidence means many
+    between the top match and alternatives. Low confidence means many
     destinations have similar scores, so the user might want to explore options.
     
     Factors considered:
     1. Gap between #1 and #2 ranked destinations
-    2.  Score spread among top 5 destinations
+    2. Score spread among top 5 destinations
     3. Absolute score of the top match
     
     Args:
@@ -733,8 +734,10 @@ def calculate_recommendation_confidence(
         return {
             "confidence": 0,
             "label": "No data",
+            "emoji": "❓",
             "gap_to_second": 0,
             "top5_spread": 0,
+            "top_score": 0,
             "recommendation": "No destinations to analyze"
         }
     
@@ -742,8 +745,10 @@ def calculate_recommendation_confidence(
         return {
             "confidence": 100,
             "label": "Only option",
+            "emoji": "☝️",
             "gap_to_second": 0,
             "top5_spread": 0,
+            "top_score": ranked_destinations[0].get('combined_score', 0),
             "recommendation": "This is the only destination matching your criteria"
         }
     
@@ -801,3 +806,11 @@ def calculate_recommendation_confidence(
         "recommendation": recommendation
     }
 
+
+# =============================================================================
+# TEST FUNCTION
+# =============================================================================
+
+def test_matching():
+    """Test function to verify module is loaded correctly."""
+    return "Matching module loaded successfully"
