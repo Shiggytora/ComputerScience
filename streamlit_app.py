@@ -249,7 +249,7 @@ def get_score_label(score: float) -> str:
 def render_destination_card(loc: Dict[str, Any], index: int):
     """Renders a destination card with flight price and weather info."""
     with st.container():
-        col1, col2, col3, col4 = st.columns([2.5, 1, 1.8, 1.2])
+        col1, col2, col3 = st.columns([3, 1.5, 1.2])
         
         with col1:
             st.markdown(f"### {loc['city']}")
@@ -264,17 +264,13 @@ def render_destination_card(loc: Dict[str, Any], index: int):
                 st.caption(f"🌡️ Now: {loc['current_temp']}°C")
         
         with col2:
-            safety = loc.get('safety', 'N/A')
-            st.metric("Safety", f"{safety}/5")
-        
-        with col3:
             flight = loc.get('flight_price')
             if flight:
                 st.metric("✈️ Flight/Person", f"{flight} CHF")
             else:
                 st.metric("✈️ Flight", "N/A")
         
-        with col4:
+        with col3:
             daily = loc.get('avg_budget_per_day', 0)
             st.metric("📅 /Day/Person", f"{int(daily)} CHF")
         
@@ -470,8 +466,8 @@ def render_start_page():
     """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
-    # Trip basics
-    col1, col2, col3 = st.columns(3)
+    # === BUDGET & TRAVELERS ===
+    col1, col2 = st.columns(2)
     with col1:
         total_budget = st.number_input(
             "💰 Total Budget (CHF)",
@@ -482,14 +478,6 @@ def render_start_page():
             help="Enter your total travel budget including flights for ALL travelers"
         )
     with col2:
-        trip_days = st.number_input(
-            "📅 Trip Length (days)",
-            min_value=MIN_DAYS,
-            max_value=MAX_DAYS,
-            value=st.session_state.trip_days,
-            help="How many days will you be traveling?"
-        )
-    with col3:
         num_travelers = st.number_input(
             "👥 Number of Travelers",
             min_value=MIN_TRAVELERS,
@@ -498,14 +486,10 @@ def render_start_page():
             help="How many people are traveling?"
         )
     
-    if trip_days > 0:
-        travelers_text = "person" if num_travelers == 1 else "people"
-        st.info(f"💵 Total budget: **CHF {total_budget}** for **{num_travelers} {travelers_text}** over **{trip_days} days** (including flights)")
-    
     st.divider()
     
-    # Reisedatum Auswahl
-    st.subheader("📅 When do you want to travel? ")
+    # === TRAVEL DATES (replaces separate "When do you want to travel" section) ===
+    st.subheader("📅 Travel Dates")
     
     date_col1, date_col2 = st.columns(2)
     
@@ -520,34 +504,35 @@ def render_start_page():
         )
     
     with date_col2:
+        default_end = travel_date_start + timedelta(days=DEFAULT_DAYS)
         travel_date_end = st.date_input(
             "Return Date",
-            value=travel_date_start + timedelta(days=trip_days),
-            min_value=travel_date_start,
+            value=default_end,
+            min_value=travel_date_start + timedelta(days=1),
             max_value=travel_date_start + timedelta(days=MAX_DAYS),
             help="When do you plan to return?"
         )
     
-    # Calculate days between dates
-    actual_days = (travel_date_end - travel_date_start).days
-    if actual_days != trip_days:
-        st.caption(f"📆 Trip duration: {actual_days} days")
-        trip_days = actual_days
+    # Calculate trip length from dates
+    trip_days = (travel_date_end - travel_date_start).days
     
-    # Info about weather data availability
+    # Show trip summary
+    travelers_text = "person" if num_travelers == 1 else "people"
+    days_text = "day" if trip_days == 1 else "days"
+    st.info(f"💵 **CHF {total_budget}** total budget for **{num_travelers} {travelers_text}** over **{trip_days} {days_text}** (including flights)")
+    
+    # Weather forecast availability
     days_until_travel = (travel_date_start - datetime.now().date()).days
     
     if days_until_travel <= 16 and days_until_travel >= 0:
         st.success("✅ Weather forecast available for your travel dates!")
     elif days_until_travel > 16:
         st.warning(f"⚠️ Travel date is {days_until_travel} days away. Using current weather data as estimate.")
-    else:
-        st.info("ℹ️ Using current weather data.")
     
     st.divider()
     
-    # Travel Style
-    st.subheader("🎨 What's Your Travel Style?")
+    # === TRAVEL STYLE ===
+    st.subheader("🎨 What's Your Travel Style? ")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -588,7 +573,7 @@ def render_start_page():
     
     st.divider()
     
-    # Weather preferences
+    # === WEATHER PREFERENCES ===
     st.subheader("🌡️ Preferred Temperature")
     
     use_weather = st.checkbox(
@@ -619,7 +604,7 @@ def render_start_page():
     
     st.divider()
     
-    # Start button
+    # === START BUTTON ===
     if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
