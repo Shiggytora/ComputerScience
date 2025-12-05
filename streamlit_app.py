@@ -661,7 +661,7 @@ def render_results_page():
         
         with map_tab1:
             destinations_map = create_destinations_map(
-                ranked[:20],
+                ranked[:5],
                 highlight_best=True,
                 title="Top Matching Destinations"
             )
