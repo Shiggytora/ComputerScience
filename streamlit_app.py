@@ -55,16 +55,11 @@ DEFAULT_TRAVELERS = 1
 LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
 
-# Available origin cities
-ORIGIN_CITIES = {
-    "Zurich": {"latitude": 47.3769, "longitude": 8.5417},
-    "Geneva": {"latitude": 46.2044, "longitude": 6.1432},
-    "Basel": {"latitude": 47.5596, "longitude": 7.5886},
-    "Bern": {"latitude": 46.9480, "longitude": 7.4474},
-    "Lausanne": {"latitude": 46.5197, "longitude": 6.6323},
-    "Lucerne": {"latitude": 47.0502, "longitude": 8.3093},
-    "St. Gallen": {"latitude": 47.4245, "longitude": 9.3767},
-    "Lugano": {"latitude": 46.0037, "longitude": 8.9511},
+# Default origin for route map (Zurich)
+DEFAULT_ORIGIN = {
+    "city": "Zurich",
+    "latitude": 47.3769,
+    "longitude": 8.5417
 }
 
 st.set_page_config(
@@ -96,7 +91,6 @@ def initialize_session_state():
         "travel_date_start": None,
         "travel_date_end": None,
         "use_forecast": False,
-        "origin_city": "Zurich",
     }
     
     for key, value in defaults.items():
@@ -249,14 +243,6 @@ def render_confidence_display(confidence_data: Dict[str, Any]):
     emoji = confidence_data.get('emoji', '❓')
     recommendation = confidence_data.get('recommendation', '')
     gap = confidence_data.get('gap_to_second', 0)
-    
-    # Color based on confidence level
-    if confidence >= 80:
-        color = "green"
-    elif confidence >= 60:
-        color = "orange"
-    else:
-        color = "red"
     
     st.markdown(f"### {emoji} Recommendation Confidence: {label}")
     st.progress(confidence / 100)
@@ -450,24 +436,6 @@ def render_start_page():
     
     st.divider()
     
-    # === NEU: Startort Auswahl ===
-    st.subheader("📍 Where are you traveling from?")
-    
-    origin_col1, origin_col2 = st.columns([2, 3])
-    
-    with origin_col1:
-        selected_origin = st.selectbox(
-            "Departure City",
-            options=list(ORIGIN_CITIES.keys()),
-            index=list(ORIGIN_CITIES.keys()).index(st.session_state.get("origin_city", "Zurich")),
-            help="Select your departure city for route visualization"
-        )
-    
-    with origin_col2:
-        st.caption(f"✈️ Flights will be shown from {selected_origin}")
-    
-    st.divider()
-    
     # Reisedatum Auswahl
     st.subheader("📅 When do you want to travel? ")
     
@@ -589,7 +557,7 @@ def render_start_page():
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
-                st.error("❌ No destinations found within your budget.  Try increasing your budget or reducing travelers.")
+                st.error("❌ No destinations found within your budget. Try increasing your budget or reducing travelers.")
             else:
                 # Calculate if forecast is available
                 days_until = (travel_date_start - datetime.now().date()).days
@@ -626,7 +594,6 @@ def render_start_page():
                 st.session_state.num_travelers = num_travelers
                 st.session_state.travel_date_start = travel_date_start
                 st.session_state.travel_date_end = travel_date_end
-                st.session_state.origin_city = selected_origin
                 st.session_state.id_used = []
                 st.session_state.chosen = []
                 st.session_state.round = 0
@@ -646,13 +613,11 @@ def render_matching_page():
     num_travelers = st.session_state.get("num_travelers", 1)
     travel_date = st.session_state.get("travel_date_start")
     use_forecast = st.session_state.get("use_forecast", False)
-    origin = st.session_state.get("origin_city", "Zurich")
     
     # Show trip info
     if current_style in TRAVEL_STYLES:
         travelers_text = "traveler" if num_travelers == 1 else "travelers"
         info_text = f"Travel Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers} {travelers_text}"
-        info_text += f" | 📍 From {origin}"
         if travel_date:
             info_text += f" | 📅 {travel_date.strftime('%b %d, %Y')}"
         if use_forecast:
@@ -728,13 +693,6 @@ def render_results_page():
     travel_date_start = st.session_state.get("travel_date_start")
     travel_date_end = st.session_state.get("travel_date_end")
     use_forecast = st.session_state.get("use_forecast", False)
-    origin_city_name = st.session_state.get("origin_city", "Zurich")
-    
-    # Build origin dict for map
-    origin_data = {
-        "city": origin_city_name,
-        **ORIGIN_CITIES.get(origin_city_name, ORIGIN_CITIES["Zurich"])
-    }
     
     with st.spinner("Calculating your best match..."):
         ranked = ranking_destinations(
@@ -755,7 +713,6 @@ def render_results_page():
         if travel_style in TRAVEL_STYLES:
             travelers_text = "traveler" if num_travelers == 1 else "travelers"
             info_text = f"Travel style: {TRAVEL_STYLES[travel_style]['name']} | 👥 {num_travelers} {travelers_text}"
-            info_text += f" | 📍 From {origin_city_name}"
             if travel_date_start and travel_date_end:
                 info_text += f" | 📅 {travel_date_start.strftime('%b %d')} - {travel_date_end.strftime('%b %d, %Y')}"
             if use_forecast:
@@ -764,7 +721,7 @@ def render_results_page():
         
         st.divider()
         
-        # === NEU: KONFIDENZ-ANZEIGE ===
+        # === KONFIDENZ-ANZEIGE ===
         confidence_data = calculate_recommendation_confidence(ranked)
         render_confidence_display(confidence_data)
         
@@ -787,9 +744,9 @@ def render_results_page():
         
         with map_tab2:
             route_map = create_route_map(
-                origin_data,
+                DEFAULT_ORIGIN,
                 best,
-                title=f"{origin_city_name} → {best['city']}, {best['country']}"
+                title=f"Zurich → {best['city']}, {best['country']}"
             )
             if route_map:
                 st.plotly_chart(route_map, use_container_width=True)
@@ -884,7 +841,7 @@ def render_results_page():
         
         st.divider()
         
-        # === NEU: ÄHNLICHE DESTINATIONEN ===
+        # === ÄHNLICHE DESTINATIONEN ===
         similar_destinations = find_similar_destinations(
             best,
             st.session_state.budget_matches,
@@ -1096,7 +1053,6 @@ def main():
         st.write(f"Round: {st.session_state.round}/{ROUNDS}")
         st.write(f"Selections: {len(st.session_state.chosen)}")
         st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
-        st.write(f"📍 From: {st.session_state.get('origin_city', 'Zurich')}")
         st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
         
         # Show travel dates if set
