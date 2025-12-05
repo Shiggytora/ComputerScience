@@ -1,5 +1,5 @@
 """
-Attractions Module - Fetches points of interest from OpenTripMap API. 
+Attractions Module - Fetches points of interest from OpenTripMap API.  
 
 This module provides functionality to fetch and display tourist attractions,
 landmarks, and points of interest for any destination. 
@@ -18,11 +18,10 @@ import streamlit as st
 # =============================================================================
 
 # Get your free API key at: https://dev.opentripmap.org/product
-# After registration, replace this with your actual key
 OPENTRIPMAP_API_KEY = "5ae2e3f221c38a28845f05b69fd0f5991a57222095b70343c72533ef"
 
 OPENTRIPMAP_BASE_URL = "https://api.opentripmap.com/0.1/en/places"
-API_TIMEOUT = 10
+API_TIMEOUT = 15  # Erhöht von 10 auf 15
 
 # Category mappings for display
 CATEGORY_CONFIG = {
@@ -53,73 +52,71 @@ CATEGORY_CONFIG = {
 def get_attractions_by_radius(
     latitude: float,
     longitude: float,
-    radius: int = 10000,
-    limit: int = 15,
-    min_rating: int = 2
+    radius: int = 15000,  # Erhöht von 10000 auf 15000
+    limit: int = 25,      # Erhöht von 15 auf 25
+    min_rating: int = 1   # GEÄNDERT von 2 auf 1 (zeigt mehr Ergebnisse!)
 ) -> List[Dict[str, Any]]:
     """
-    Fetches attractions within a radius of given coordinates. 
+    Fetches attractions within a radius of given coordinates.  
     
     Args:
         latitude: Geographic latitude
         longitude: Geographic longitude
-        radius: Search radius in meters (default: 10km)
+        radius: Search radius in meters (default: 15km)
         limit: Maximum number of results
         min_rating: Minimum rating filter (1-3, where 3 is highest)
         
     Returns:
         List of attraction dictionaries with basic info
-        
-    Example:
-        >>> attractions = get_attractions_by_radius(41.3851, 2.1734)  # Barcelona
-        >>> for a in attractions:
-        ...     print(a['name'])
     """
     try:
+        params = {
+            "radius": radius,
+            "lon": longitude,
+            "lat": latitude,
+            "rate": min_rating,
+            "format": "json",
+            "limit": limit,
+            "apikey": OPENTRIPMAP_API_KEY,
+        }
+        
         response = requests.get(
             f"{OPENTRIPMAP_BASE_URL}/radius",
-            params={
-                "radius": radius,
-                "lon": longitude,
-                "lat": latitude,
-                "rate": min_rating,
-                "format": "json",
-                "limit": limit,
-                "apikey": OPENTRIPMAP_API_KEY,
-            },
+            params=params,
             timeout=API_TIMEOUT
         )
         
         if response.status_code == 200:
             attractions = response.json()
-            return attractions if isinstance(attractions, list) else []
+            if isinstance(attractions, list):
+                # Filter out attractions without names
+                named_attractions = [a for a in attractions if a.get('name', '').strip()]
+                return named_attractions
+            return []
+        elif response.status_code == 401:
+            st.error("OpenTripMap API Key is invalid.  Please check your API key.")
+            return []
         else:
-            print(f"OpenTripMap API error: {response.status_code}")
+            st.warning(f"OpenTripMap API returned status {response.status_code}")
             return []
             
     except requests.Timeout:
-        print("OpenTripMap API timeout")
+        st.warning("OpenTripMap API request timed out.  Please try again.")
         return []
     except requests.RequestException as e:
-        print(f"OpenTripMap API error: {e}")
+        st.warning(f"Could not connect to OpenTripMap API: {e}")
         return []
 
 
 def get_attraction_details(xid: str) -> Optional[Dict[str, Any]]:
     """
-    Fetches detailed information for a specific attraction. 
+    Fetches detailed information for a specific attraction.  
     
     Args:
         xid: Unique identifier of the attraction
         
     Returns:
-        Dictionary with detailed attraction info including:
-        - name: Attraction name
-        - kinds: Categories (comma-separated)
-        - wikipedia_extracts: Description from Wikipedia
-        - preview: Image preview info
-        - point: Coordinates
-        - address: Location details
+        Dictionary with detailed attraction info
     """
     if not xid:
         return None
@@ -134,8 +131,8 @@ def get_attraction_details(xid: str) -> Optional[Dict[str, Any]]:
         if response.status_code == 200:
             return response.json()
             
-    except Exception as e:
-        print(f"Error fetching attraction details: {e}")
+    except Exception:
+        pass
     
     return None
 
@@ -146,9 +143,6 @@ def get_attractions_for_destination(
 ) -> List[Dict[str, Any]]:
     """
     Fetches and enriches attractions for a destination.
-    
-    This function combines radius search with detail fetching
-    to provide complete attraction information.
     
     Args:
         destination: Destination dictionary with latitude/longitude
@@ -162,15 +156,16 @@ def get_attractions_for_destination(
     city = destination.get('city', 'Unknown')
     
     if lat is None or lon is None:
+        st.warning(f"No coordinates available for {city}")
         return []
     
     # Check cache first
-    cache_key = f"attractions_{city}"
+    cache_key = f"attractions_{city}_{lat}_{lon}"
     if cache_key in st.session_state:
         return st.session_state[cache_key]
     
-    # Fetch basic attraction list
-    basic_attractions = get_attractions_by_radius(lat, lon, limit=limit * 2)
+    # Fetch basic attraction list (get more than needed to filter)
+    basic_attractions = get_attractions_by_radius(lat, lon, limit=limit * 3)
     
     if not basic_attractions:
         return []
@@ -186,30 +181,35 @@ def get_attractions_for_destination(
         name = attr.get('name', '').strip()
         
         # Skip unnamed attractions
-        if not name or name == "":
+        if not name:
             continue
         
         # Get detailed info
         details = get_attraction_details(xid)
         
-        if details:
+        if details and details.get('name'):
             # Parse categories
-            kinds = details.get('kinds', '').split(',')
+            kinds_str = details.get('kinds', '')
+            kinds = kinds_str.split(',') if kinds_str else ['other']
             primary_kind = kinds[0] if kinds else 'other'
             
             # Get category config
             category_info = CATEGORY_CONFIG.get(
                 primary_kind, 
-                CATEGORY_CONFIG.get('other')
+                CATEGORY_CONFIG['other']
             )
             
             # Extract Wikipedia description
-            wiki_extracts = details.get('wikipedia_extracts', {})
-            description = wiki_extracts.get('text', '') if isinstance(wiki_extracts, dict) else ''
+            wiki_extracts = details.get('wikipedia_extracts')
+            description = ''
+            if isinstance(wiki_extracts, dict):
+                description = wiki_extracts.get('text', '')
             
             # Get image if available
-            preview = details.get('preview', {})
-            image_url = preview.get('source') if isinstance(preview, dict) else None
+            preview = details.get('preview')
+            image_url = None
+            if isinstance(preview, dict):
+                image_url = preview.get('source')
             
             enriched.append({
                 'xid': xid,
@@ -246,18 +246,26 @@ def render_attractions_section(destination: Dict[str, Any], num_attractions: int
         num_attractions: Number of attractions to display
     """
     city = destination.get('city', 'Unknown')
-    country = destination.get('country', '')
+    lat = destination.get('latitude')
+    lon = destination.get('longitude')
     
     st.subheader(f"🎯 Top Attractions in {city}")
+    
+    # Debug info (optional - kann später entfernt werden)
+    # st.caption(f"📍 Coordinates: {lat}, {lon}")
     
     with st.spinner("Loading attractions..."):
         attractions = get_attractions_for_destination(destination, limit=num_attractions)
     
     if not attractions:
-        st.info(f"No attraction data available for {city}. Try a larger city or check your internet connection.")
+        st.info(f"No attraction data available for {city}.")
+        with st.expander("ℹ️ Debug Info"):
+            st.write(f"**Latitude:** {lat}")
+            st.write(f"**Longitude:** {lon}")
+            st.write("The OpenTripMap API may not have data for this location.")
         return
     
-    st.caption(f"Found {len(attractions)} top-rated attractions")
+    st.caption(f"Found {len(attractions)} attractions")
     
     # Display in a grid
     cols_per_row = 2
@@ -281,7 +289,7 @@ def render_attraction_card(attraction: Dict[str, Any]):
         attraction: Enriched attraction dictionary
     """
     with st.container():
-        # Image or placeholder
+        # Image
         if attraction.get('image_url'):
             try:
                 st.image(attraction['image_url'], use_container_width=True)
@@ -315,7 +323,7 @@ def render_attraction_card(attraction: Dict[str, Any]):
 
 def render_attractions_compact(destination: Dict[str, Any], num_attractions: int = 5):
     """
-    Renders a compact list of attractions (for use in smaller spaces).
+    Renders a compact list of attractions.
     
     Args:
         destination: Destination dictionary
@@ -341,9 +349,7 @@ def render_attractions_compact(destination: Dict[str, Any], num_attractions: int
 
 def get_attractions_summary(destination: Dict[str, Any]) -> str:
     """
-    Returns a text summary of top attractions for a destination.
-    
-    Useful for including in exports or text-based displays.
+    Returns a text summary of top attractions.
     
     Args:
         destination: Destination dictionary
