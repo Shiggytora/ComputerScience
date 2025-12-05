@@ -6,9 +6,9 @@ import csv
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
-DESTINATIONS_FILE = BASE_DIR / "data" / "destinations.csv"
-FLIGHT_PRICES_FILE = BASE_DIR / "data" / "flight_prices.csv"
-OUTPUT_FILE = BASE_DIR / "data" / "destinations_updated.csv"
+DESTINATIONS_FILE = Path("C:/Users/Jan Linsen/ComputerScience/data/destinations.csv")
+FLIGHT_PRICES_FILE = Path("C:/Users/Jan Linsen/ComputerScience/data/flight_prices.csv")
+OUTPUT_FILE = Path("C:/Users/Jan Linsen/ComputerScience/data/destinations_updated.csv")
 
 
 def main():
