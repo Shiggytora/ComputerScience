@@ -15,8 +15,6 @@ from src.matching import (
     calculate_feature_ranges,
     get_match_breakdown,
     get_travel_style_weights,
-    MATCHING_FEATURES,
-    DEFAULT_WEIGHTS,
     TRAVEL_STYLES,
 )
 from src.weather_matching import (

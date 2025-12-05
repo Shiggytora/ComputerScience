@@ -1,8 +1,10 @@
 """
-Weather Matching Module - Integrates weather data into recommendations.
+Weather Matching Module - Integrates weather data into recommendations. 
 
 This module fetches real-time weather data from the Open-Meteo API
-and calculates weather compatibility scores based on user temperature preferences.
+and calculates weather compatibility scores based on user temperature preferences. 
+
+Part of Requirement #2: API Integration
 """
 
 from typing import Dict, Any, List, Tuple
@@ -13,6 +15,10 @@ import streamlit as st
 OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
 API_TIMEOUT = 5  # seconds
 
+
+# =============================================================================
+# CURRENT WEATHER FUNCTIONS
+# =============================================================================
 
 def get_weather_for_destination(latitude: float, longitude: float) -> Dict[str, Any]:
     """
@@ -72,7 +78,7 @@ def calculate_weather_score(
     preferred_temp_range: Tuple[int, int]
 ) -> float:
     """
-    Calculates a weather compatibility score for a destination.
+    Calculates a weather compatibility score for a destination. 
     
     This function implements a scoring algorithm that compares the current
     temperature at a destination with the user's preferred temperature range. 
@@ -132,7 +138,7 @@ def enrich_destinations_with_weather(
     show_progress: bool = True
 ) -> List[Dict[str, Any]]:
     """
-    Enriches destination list with weather data and scores.
+    Enriches destination list with weather data and scores. 
     
     This function iterates through all destinations, fetches weather data,
     and adds weather_score and current_temp fields to each destination. 
@@ -208,7 +214,7 @@ def enrich_destinations_with_weather(
 
 def get_weather_description(weathercode: int) -> str:
     """
-    Converts WMO weather code to human-readable description.
+    Converts WMO weather code to human-readable description. 
     
     Args:
         weathercode: WMO weather interpretation code
@@ -239,8 +245,9 @@ def get_weather_description(weathercode: int) -> str:
     }
     return weather_codes.get(weathercode, "Unknown")
 
+
 # =============================================================================
-# FORECAST & SEASONAL WEATHER
+# FORECAST FUNCTIONS (NEW)
 # =============================================================================
 
 def get_forecast_for_destination(
@@ -250,7 +257,7 @@ def get_forecast_for_destination(
     end_date: str
 ) -> Dict[str, Any]:
     """
-    Fetches weather forecast for a specific date range. 
+    Fetches weather forecast for a specific date range.
     
     Uses Open-Meteo's forecast API for dates within 16 days,
     returns current weather as fallback for dates further out.
@@ -289,7 +296,7 @@ def get_forecast_for_destination(
         }
         
         response = requests.get(
-            "https://api.open-meteo.com/v1/forecast",
+            OPEN_METEO_BASE_URL,
             params=params,
             timeout=API_TIMEOUT
         )
@@ -341,85 +348,9 @@ def get_forecast_for_destination(
         return {"success": False, "error": str(e)}
 
 
-def get_historical_average(
-    latitude: float,
-    longitude: float,
-    month: int
-) -> Dict[str, Any]:
-    """
-    Gets historical average weather for a specific month. 
-    
-    Uses Open-Meteo's historical API to calculate typical weather
-    for planning trips more than 16 days in advance. 
-    
-    Args:
-        latitude: Geographic latitude
-        longitude: Geographic longitude
-        month: Month number (1-12)
-        
-    Returns:
-        Dictionary with historical averages
-    """
-    try:
-        # Use last year's data for the same month
-        import datetime
-        current_year = datetime.datetime.now().year
-        last_year = current_year - 1
-        
-        # Get first and last day of month
-        if month == 12:
-            start_date = f"{last_year}-{month:02d}-01"
-            end_date = f"{last_year}-{month:02d}-31"
-        else:
-            start_date = f"{last_year}-{month:02d}-01"
-            # Approximate end of month
-            end_date = f"{last_year}-{month:02d}-28"
-        
-        params = {
-            "latitude": latitude,
-            "longitude": longitude,
-            "daily": ["temperature_2m_max", "temperature_2m_min", "precipitation_sum"],
-            "timezone": "auto",
-            "start_date": start_date,
-            "end_date": end_date,
-        }
-        
-        response = requests.get(
-            "https://archive-api.open-meteo.com/v1/archive",
-            params=params,
-            timeout=API_TIMEOUT
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            daily = data.get("daily", {})
-            
-            temps_max = [t for t in daily.get("temperature_2m_max", []) if t is not None]
-            temps_min = [t for t in daily.get("temperature_2m_min", []) if t is not None]
-            precipitation = daily.get("precipitation_sum", [])
-            
-            if temps_max and temps_min:
-                avg_temp = (sum(temps_max) + sum(temps_min)) / (len(temps_max) + len(temps_min))
-                rain_days = sum(1 for p in precipitation if p and p > 1)
-                
-                return {
-                    "avg_temp": round(avg_temp, 1),
-                    "max_temp": round(max(temps_max), 1),
-                    "min_temp": round(min(temps_min), 1),
-                    "precipitation_days": rain_days,
-                    "success": True,
-                    "source": "historical"
-                }
-        
-        return {"success": False, "error": "Could not fetch historical data"}
-        
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
 def calculate_forecast_weather_score(
     destination: Dict[str, Any],
-    preferred_temp_range: tuple,
+    preferred_temp_range: Tuple[int, int],
     start_date: str,
     end_date: str
 ) -> Dict[str, Any]:
@@ -445,9 +376,10 @@ def calculate_forecast_weather_score(
     forecast = get_forecast_for_destination(lat, lon, start_date, end_date)
     
     if not forecast.get("success"):
-        # Fallback to current weather
+        # Fallback to current weather score
+        score = calculate_weather_score(destination, preferred_temp_range)
         return {
-            "score": calculate_weather_score(destination, preferred_temp_range),
+            "score": score,
             "source": "current"
         }
     
@@ -486,7 +418,7 @@ def calculate_forecast_weather_score(
 
 def enrich_destinations_with_forecast(
     destinations: List[Dict[str, Any]],
-    preferred_temp: tuple,
+    preferred_temp: Tuple[int, int],
     start_date: str,
     end_date: str,
     show_progress: bool = True
@@ -494,15 +426,24 @@ def enrich_destinations_with_forecast(
     """
     Enriches destinations with weather forecast for specific travel dates.
     
+    This function fetches weather forecasts for each destination based on
+    the user's planned travel dates and calculates compatibility scores. 
+    
     Args:
         destinations: List of destination dictionaries
-        preferred_temp: User's preferred temperature range
+        preferred_temp: User's preferred temperature range (min, max)
         start_date: Travel start date (YYYY-MM-DD)
         end_date: Travel end date (YYYY-MM-DD)
         show_progress: Whether to show progress bar
         
     Returns:
-        List of destinations enriched with forecast data
+        List of destinations enriched with forecast data including:
+        - weather_score: Compatibility score (0-100)
+        - forecast_temp: Average forecasted temperature
+        - forecast_min: Minimum temperature
+        - forecast_max: Maximum temperature
+        - rain_days: Expected rainy days
+        - weather_source: "forecast" or "current"
     """
     enriched = []
     
@@ -528,6 +469,7 @@ def enrich_destinations_with_forecast(
             dest_copy['forecast_min'] = cached.get('min_temp')
             dest_copy['forecast_max'] = cached.get('max_temp')
             dest_copy['rain_days'] = cached.get('precipitation_days', 0)
+            dest_copy['total_days'] = cached.get('total_days', 1)
             dest_copy['weather_source'] = cached.get('source', 'cached')
         else:
             # Fetch forecast
@@ -540,6 +482,7 @@ def enrich_destinations_with_forecast(
             dest_copy['forecast_min'] = forecast_data.get('min_temp')
             dest_copy['forecast_max'] = forecast_data.get('max_temp')
             dest_copy['rain_days'] = forecast_data.get('precipitation_days', 0)
+            dest_copy['total_days'] = forecast_data.get('total_days', 1)
             dest_copy['weather_source'] = forecast_data.get('source', 'unknown')
             
             # Cache result
@@ -549,10 +492,9 @@ def enrich_destinations_with_forecast(
         
         if show_progress:
             progress = (i + 1) / len(destinations)
-            progress_bar.progress(progress, text=f"Loading forecasts...  {i+1}/{len(destinations)}")
+            progress_bar.progress(progress, text=f"Loading forecasts... {i+1}/{len(destinations)}")
     
     if show_progress:
-        progress_bar. empty()
+        progress_bar.empty()
     
     return enriched
-
