@@ -359,12 +359,16 @@ def render_insights(insights: Dict[str, Any]):
 
 def render_similar_destinations(
     similar: List[Dict[str, Any]], 
+    ranked: List[Dict[str, Any]],
     num_travelers: int, 
     trip_days: int
 ):
-    """Renders the similar destinations section."""
+    """Renders the similar destinations section with correct scores."""
     if not similar:
         return
+    
+    # Create a lookup for scores from ranked destinations
+    score_lookup = {d.get('id'): d.get('combined_score', 0) for d in ranked}
     
     st.subheader("🔄 Similar Destinations You Might Like")
     st.caption("These destinations have a similar profile to your top match")
@@ -375,7 +379,10 @@ def render_similar_destinations(
         country = dest.get('country', '')
         flight = dest.get('flight_price') or 0
         daily = dest.get('avg_budget_per_day') or 0
-        combined = dest.get('combined_score', 0)
+        
+        # Get the actual match score from ranked destinations
+        dest_id = dest.get('id')
+        combined = score_lookup.get(dest_id, dest.get('combined_score', 0))
         
         total = (flight * num_travelers) + (daily * trip_days * num_travelers)
         
@@ -885,7 +892,7 @@ def render_results_page():
         )
         
         if similar_destinations:
-            render_similar_destinations(similar_destinations, num_travelers, trip_days)
+            render_similar_destinations(similar_destinations, ranked, num_travelers, trip_days)
         
         # === VISUALISIERUNGEN ===
         st.subheader("📊 Visual Insights")
