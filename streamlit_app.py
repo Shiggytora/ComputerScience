@@ -3,6 +3,7 @@ Travel Matching Application - Main Streamlit Application
 """
 
 import streamlit as st
+import random
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 
@@ -37,11 +38,6 @@ from src.visuals import (
     create_route_map,
     FEATURE_CONFIG,
 )
-from src.attractions import (
-    render_attractions_section,
-    render_attractions_compact,
-    get_attractions_summary,
-)
 
 # =============================================================================
 # CONFIGURATION
@@ -59,6 +55,7 @@ MAX_TRAVELERS = 10
 DEFAULT_TRAVELERS = 1
 LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
+MAX_DESTINATIONS = 50
 
 # Default origin for route map (Zurich)
 DEFAULT_ORIGIN = {
@@ -114,7 +111,7 @@ def reset_session_state():
 # =============================================================================
 
 def get_current_round_locations() -> List[Dict[str, Any]]:
-    """Gets destinations for the current matching round."""
+    """Gets destinations for the current matching round (random selection)."""
     round_key = f"locations_round_{st.session_state.round}"
     
     if round_key not in st.session_state or not st.session_state[round_key]:
@@ -126,6 +123,72 @@ def get_current_round_locations() -> List[Dict[str, Any]]:
         st.session_state[round_key] = locations
     
     return st.session_state[round_key]
+
+
+def get_smart_round_locations() -> List[Dict[str, Any]]:
+    """
+    Gets destinations for the current round with smart selection. 
+    
+    Rounds 1-3: Random selection (exploration phase)
+    Rounds 4+: Prioritizes destinations that match learned preferences
+    """
+    current_round = st.session_state.round
+    round_key = f"locations_round_{current_round}"
+    
+    # Return cached if exists
+    if round_key in st.session_state and st.session_state[round_key]:
+        return st.session_state[round_key]
+    
+    available = [
+        d for d in st.session_state.budget_matches 
+        if d["id"] not in st.session_state.id_used
+    ]
+    
+    if not available:
+        return []
+    
+    # Rounds 1-3: Pure random selection (exploration)
+    if current_round < 3 or len(st.session_state.chosen) < 3:
+        if len(available) <= LOCATIONS_PER_ROUND:
+            locations = available
+        else:
+            locations = random.sample(available, LOCATIONS_PER_ROUND)
+    
+    # Rounds 4+: Smart selection based on learned preferences
+    else:
+        travel_style = st.session_state.get("travel_style", "balanced")
+        use_weather = st.session_state.get("use_weather", True)
+        
+        # Rank available destinations by match score
+        ranked = ranking_destinations(
+            available,
+            st.session_state.chosen,
+            travel_style=travel_style,
+            use_weather=use_weather,
+            weather_weight=WEATHER_WEIGHT,
+        )
+        
+        if len(ranked) <= LOCATIONS_PER_ROUND:
+            locations = ranked
+        else:
+            # Mix: 2 from top matches + 1 random (keeps variety)
+            top_pool = ranked[:10]  # Top 10 candidates
+            
+            # Select 2 from top matches
+            selected_top = random.sample(top_pool, min(2, len(top_pool)))
+            
+            # Select 1 random for variety
+            remaining = [d for d in ranked if d not in selected_top]
+            if remaining:
+                selected_other = random.sample(remaining, 1)
+            else:
+                selected_other = []
+            
+            locations = selected_top + selected_other
+            random.shuffle(locations)  # Shuffle so it looks random
+    
+    st.session_state[round_key] = locations
+    return locations
 
 
 def process_selection(choice_id: int, locations: List[Dict[str, Any]]) -> bool:
@@ -562,8 +625,12 @@ def render_start_page():
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
-                st.error("❌ No destinations found within your budget. Try increasing your budget or reducing travelers.")
+                st.error("❌ No destinations found within your budget.  Try increasing your budget or reducing travelers.")
             else:
+                # Limit to max destinations for better performance
+                if len(matches) > MAX_DESTINATIONS:
+                    matches = matches[:MAX_DESTINATIONS]
+                
                 # Calculate if forecast is available
                 days_until = (travel_date_start - datetime.now().date()).days
                 can_use_forecast = 0 <= days_until <= 16
@@ -633,7 +700,8 @@ def render_matching_page():
     st.subheader(f"🎲 Round {current_display_round} of {ROUNDS}")
     st.write("Select the destination that appeals to you most:")
     
-    locations = get_current_round_locations()
+    # Use smart location selection (random for rounds 1-3, smart for 4+)
+    locations = get_smart_round_locations()
     
     if not locations:
         st.warning("⚠️ No more destinations available.  Proceeding to results...")
@@ -846,12 +914,6 @@ def render_results_page():
         
         st.divider()
         
-        # === ATTRACTIONS SECTION (NEU!) ===
-        with st.expander("🎯 Top Attractions & Things To Do", expanded=True):
-            render_attractions_section(best, num_attractions=8)
-        
-        st.divider()
-        
         # === ÄHNLICHE DESTINATIONEN ===
         similar_destinations = find_similar_destinations(
             best,
@@ -1036,7 +1098,7 @@ def render_results_page():
                 st.info("🚧 Share feature coming soon!")
     
     else:
-        st.error("❌ Unable to generate recommendations. Please try again.")
+        st.error("❌ Unable to generate recommendations.  Please try again.")
         if st.button("🔄 Start Over", type="primary"):
             reset_session_state()
             st.rerun()
@@ -1081,7 +1143,7 @@ def main():
             st.caption("🌡️ Using current weather")
         
         st.divider()
-        st.caption("Travel Recommender v2.4")
+        st.caption("Travel Recommender v2.5")
         st.caption("CS Group 9.1")
     
     if st.session_state.state == "Start":
