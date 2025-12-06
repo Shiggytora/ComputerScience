@@ -1,5 +1,5 @@
 """
-Script to rebuild the travel database with new schema. 
+Script to rebuild the travel database with new schema.
 Run this locally, then upload the new travel.db to GitHub.
 """
 
@@ -16,6 +16,7 @@ CSV_PATH = BASE_DIR / "data" / "destinations.csv"
 def rebuild_database():
     print(f"Database path: {DB_PATH}")
     print(f"CSV path: {CSV_PATH}")
+    print("=" * 60)
     
     # Check if CSV exists
     if not CSV_PATH.exists():
@@ -30,7 +31,7 @@ def rebuild_database():
     print("Dropping old table...")
     cur.execute("DROP TABLE IF EXISTS destinations;")
     
-    # Create new table
+    # Create new table (flight_price, NOT flight_price_zrh!)
     print("Creating new table...")
     cur.execute("""
         CREATE TABLE destinations (
@@ -62,51 +63,60 @@ def rebuild_database():
         );
     """)
     
-    # Load CSV
-    print("Loading CSV...")
+    # Load CSV with semicolon delimiter
+    print("\nLoading CSV (delimiter: semicolon)...")
     with open(CSV_PATH, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=';')
+        
+        print(f"Columns found: {reader.fieldnames}")
         
         destinations = []
         for row in reader:
             try:
-                # Use flight_price_zrh if available, otherwise flight_price, otherwise 0
-                flight_price = row.get("flight_price_zrh") or row.get("flight_price") or 0
-                if flight_price == "":
+                # Get flight price from flight_price_zrh column
+                fp = row.get("flight_price_zrh", "0")
+                if fp == "" or fp is None:
                     flight_price = 0
+                else:
+                    flight_price = int(float(fp))
                 
                 dest = (
                     int(row["id"]),
                     row["city"],
                     row["country"],
                     row["continent"],
-                    row.get("iata_code", ""),
-                    float(row.get("latitude", 0)),
-                    float(row.get("longitude", 0)),
-                    int(row.get("avg_budget_per_day", 100)),
-                    int(float(flight_price)),  # flight_price_zrh oder flight_price
-                    row.get("population", "medium"),
-                    int(row.get("safety", 3)),
-                    int(row.get("visa_easy", 1)),
-                    int(row.get("english_level", 3)),
-                    row.get("climate", "temperate"),
-                    row.get("best_months", ""),
-                    int(row.get("crowds", 3)),
-                    int(row.get("is_coastal", 0)),
-                    int(row.get("beach", 3)),
-                    int(row.get("culture", 3)),
-                    int(row.get("nature", 3)),
-                    int(row.get("food", 3)),
-                    int(row.get("nightlife", 3)),
-                    int(row.get("adventure", 3)),
-                    int(row.get("romance", 3)),
-                    int(row.get("family", 3)),
+                    row.get("iata_code", "") or "",
+                    float(row.get("latitude", 0) or 0),
+                    float(row.get("longitude", 0) or 0),
+                    int(row.get("avg_budget_per_day", 100) or 100),
+                    flight_price,  # flight_price_zrh -> flight_price in DB
+                    row.get("population", "medium") or "medium",
+                    int(row.get("safety", 3) or 3),
+                    int(row.get("visa_easy", 1) or 1),
+                    int(row.get("english_level", 3) or 3),
+                    row.get("climate", "temperate") or "temperate",
+                    row.get("best_months", "") or "",
+                    int(row.get("crowds", 3) or 3),
+                    int(row.get("is_coastal", 0) or 0),
+                    int(row.get("beach", 3) or 3),
+                    int(row.get("culture", 3) or 3),
+                    int(row.get("nature", 3) or 3),
+                    int(row.get("food", 3) or 3),
+                    int(row.get("nightlife", 3) or 3),
+                    int(row.get("adventure", 3) or 3),
+                    int(row.get("romance", 3) or 3),
+                    int(row.get("family", 3) or 3),
                 )
                 destinations.append(dest)
+                
+                # Show first 5 rows
+                if len(destinations) <= 5:
+                    print(f"  ✓ {row['city']}: Flight={flight_price} CHF, Daily={row.get('avg_budget_per_day')} CHF")
+                    
             except (ValueError, KeyError) as e:
-                print(f"  Warning: Skipping row {row.get('id', '?')}: {e}")
+                print(f"  ⚠ Skipping row {row.get('id', '?')}: {e}")
     
-    print(f"Loaded {len(destinations)} destinations")
+    print(f"\nLoaded {len(destinations)} destinations")
     
     # Insert data
     print("Inserting data...")
@@ -123,32 +133,31 @@ def rebuild_database():
     conn.commit()
     
     # Verify
+    print("\n" + "=" * 60)
     cur.execute("SELECT COUNT(*) FROM destinations")
     count = cur.fetchone()[0]
-    print(f"\nTotal records in database: {count}")
     
-    # Show sample with flight_price
-    cur.execute("SELECT id, city, flight_price, avg_budget_per_day FROM destinations LIMIT 5")
-    print("\nSample data (with flight prices):")
-    for row in cur.fetchall():
-        flight = row[2] if row[2] else "N/A"
-        print(f"  ID: {row[0]}, City: {row[1]}, Flight: {flight} CHF, Daily: {row[3]} CHF")
-    
-    # Check how many have flight prices
     cur.execute("SELECT COUNT(*) FROM destinations WHERE flight_price > 0")
     with_prices = cur.fetchone()[0]
-    print(f"\nDestinations with flight prices: {with_prices}/{count}")
     
-    # Show any without prices
-    cur.execute("SELECT id, city FROM destinations WHERE flight_price = 0 OR flight_price IS NULL")
-    missing = cur.fetchall()
-    if missing:
-        print(f"\n⚠️ Destinations without flight prices:")
-        for row in missing:
-            print(f"  ID: {row[0]}, City: {row[1]}")
+    print("✈️ Sample data:")
+    cur.execute("SELECT id, city, flight_price, avg_budget_per_day FROM destinations LIMIT 5")
+    for row in cur.fetchall():
+        print(f"  {row[1]}: Flight={row[2]} CHF, Daily={row[3]} CHF")
     
-    conn.close()
+    print(f"\n📊 Total: {count} destinations")
+    print(f"📊 With flight prices: {with_prices}/{count}")
+    
+    # Show destinations with 0 price
+    cur.execute("SELECT city FROM destinations WHERE flight_price = 0")
+    zero_prices = cur.fetchall()
+    if zero_prices:
+        print(f"\n⚠️ Destinations with 0 CHF flight price:")
+        for row in zero_prices:
+            print(f"  - {row[0]}")
+    
     print(f"\n✅ Done! Database saved to {DB_PATH}")
+    conn.close()
 
 
 if __name__ == "__main__":
