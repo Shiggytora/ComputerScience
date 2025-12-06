@@ -44,10 +44,17 @@ from src.visuals import (
     create_route_map,
     FEATURE_CONFIG,
 )
+from src.images import (
+    get_destination_image,
+    get_thumbnail_url,
+    get_hero_image_url,
+)
 
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
+
+APP_URL = "https://computerscience91.streamlit.app"
 
 ROUNDS = 7
 MIN_BUDGET = 100
@@ -146,7 +153,7 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
         return st.session_state[round_key]
     
     available = [
-        d for d in st.session_state.budget_matches 
+        d for d in st.session_state.budget_matches
         if d["id"] not in st.session_state.id_used
     ]
     
@@ -244,8 +251,12 @@ def get_score_label(score: float) -> str:
 
 
 def render_destination_card(loc: Dict[str, Any], index: int):
-    """Renders a destination card with flight price and weather info."""
+    """Renders a destination card with image, flight price and weather info."""
     with st.container():
+        # Destination image
+        image_url = get_thumbnail_url(loc.get('city', ''), loc.get('country', ''))
+        st.image(image_url, use_container_width=True)
+        
         col1, col2, col3 = st.columns([3, 1.5, 1.2])
         
         with col1:
@@ -404,12 +415,12 @@ def render_insights(insights: Dict[str, Any]):
 
 
 def render_similar_destinations(
-    similar: List[Dict[str, Any]], 
+    similar: List[Dict[str, Any]],
     ranked: List[Dict[str, Any]],
-    num_travelers: int, 
+    num_travelers: int,
     trip_days: int
 ):
-    """Renders the similar destinations section with correct scores."""
+    """Renders the similar destinations section with images and correct scores."""
     if not similar:
         return
     
@@ -430,26 +441,30 @@ def render_similar_destinations(
         
         total = (flight * num_travelers) + (daily * trip_days * num_travelers)
         
-        col1, col2, col3, col4 = st.columns([3, 1.2, 1, 1])
+        # Image and info side by side
+        img_col, info_col = st.columns([1, 2])
         
-        with col1:
+        with img_col:
+            image_url = get_thumbnail_url(city, country)
+            st.image(image_url, use_container_width=True)
+        
+        with info_col:
             st.write(f"**{city}, {country}**")
             st.caption(f"🔄 {similarity}% similar to your top match")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                color = get_score_color(combined)
+                st.write(f"{color} {combined}%")
+                st.caption("Match")
+            with col2:
+                st.write(f"✈️ CHF {flight * num_travelers}")
+                st.caption("Flights")
+            with col3:
+                st.write(f"💰 CHF {int(total)}")
+                st.caption("Total")
         
-        with col2:
-            color = get_score_color(combined)
-            st.write(f"{color} {combined}%")
-            st.caption("Match Score")
-        
-        with col3:
-            st.write(f"✈️ CHF {flight * num_travelers}")
-            st.caption("Flights")
-        
-        with col4:
-            st.write(f"💰 CHF {int(total)}")
-            st.caption("Total")
-    
-    st.divider()
+        st.divider()
 
 
 # =============================================================================
@@ -745,6 +760,10 @@ def render_results_page():
     if ranked:
         best = ranked[0]
         
+        # === HERO IMAGE ===
+        hero_image_url = get_hero_image_url(best.get('city', ''), best.get('country', ''))
+        st.image(hero_image_url, use_container_width=True)
+        
         st.success(f"### 🏆 {best['city']}, {best['country']}")
         st.write("Based on your preferences, this is your ideal destination!")
         
@@ -844,7 +863,7 @@ def render_results_page():
         with cost_col1:
             if num_travelers > 1:
                 st.metric(
-                    "✈️ Flights (round-trip)", 
+                    "✈️ Flights (round-trip)",
                     f"CHF {int(flight_total)}",
                     help=f"CHF {flight_price} × {num_travelers} travelers"
                 )
@@ -890,26 +909,26 @@ def render_results_page():
         breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
         
         viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
-            "🎯 Preference Profile", 
-            "📈 Score Breakdown", 
+            "🎯 Preference Profile",
+            "📈 Score Breakdown",
             "🏆 Top Destinations",
             "💰 Budget & Weather"
         ])
         
         with viz_tab1:
             radar_fig = create_preference_radar_chart(
-                preference, 
+                preference,
                 title="Your Travel Preference Profile"
             )
             if radar_fig:
                 st.plotly_chart(radar_fig, use_container_width=True)
             
             st.write("---")
-            st.write("**How does your top match compare? **")
+            st.write("**How does your top match compare?**")
             
             dest_values = {
-                k: best.get(k, 0) 
-                for k in FEATURE_CONFIG.keys() 
+                k: best.get(k, 0)
+                for k in FEATURE_CONFIG.keys()
                 if best.get(k) is not None
             }
             comparison_fig = create_comparison_radar_chart(
@@ -1005,6 +1024,7 @@ def render_results_page():
         with st.expander("🔍 Full Destination Details"):
             st.json(best)
         
+        # === OTHER GREAT OPTIONS WITH IMAGES ===
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
@@ -1013,22 +1033,34 @@ def render_results_page():
                 combined = dest.get('combined_score', 0)
                 flight = dest.get('flight_price') or 0
                 daily = dest.get('avg_budget_per_day') or 0
+                city = dest.get('city', '')
+                country = dest.get('country', '')
                 
                 total = (flight * num_travelers) + (daily * trip_days * num_travelers)
                 color = get_score_color(combined)
                 
-                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
-                with col1:
-                    st.write(f"**{i}.** {dest['city']}, {dest['country']}")
-                with col2:
-                    st.write(f"{color} {combined}%")
-                with col3:
-                    if num_travelers > 1:
-                        st.caption(f"✈️ CHF {flight * num_travelers}")
-                    else:
-                        st.caption(f"✈️ CHF {flight}")
-                with col4:
-                    st.caption(f"💰 CHF {int(total)}")
+                img_col, info_col = st.columns([1, 3])
+                
+                with img_col:
+                    image_url = get_thumbnail_url(city, country)
+                    st.image(image_url, use_container_width=True)
+                
+                with info_col:
+                    st.write(f"**{i}.{city}, {country}**")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.write(f"{color} {combined}%")
+                        st.caption("Match")
+                    with col2:
+                        if num_travelers > 1:
+                            st.write(f"✈️ CHF {flight * num_travelers}")
+                        else:
+                            st.write(f"✈️ CHF {flight}")
+                        st.caption("Flights")
+                    with col3:
+                        st.write(f"💰 CHF {int(total)}")
+                        st.caption("Total")
         
         st.divider()
         
@@ -1057,7 +1089,7 @@ def render_results_page():
                 
                 if encoded:
                     st.session_state.show_share_modal = True
-                    st.session_state.share_url = f"https://computerscience91.streamlit.app/?share={encoded}"
+                    st.session_state.share_url = f"{APP_URL}/? share={encoded}"
                     st.rerun()
         
         # === SHARE MODAL ===
@@ -1068,15 +1100,13 @@ def render_results_page():
             share_url = st.session_state.get("share_url", "")
             
             st.success("✅ Share link created!")
-            st.caption("Add this to your app URL to share:")
             st.code(share_url, language=None)
             
-            # Create share text
             share_text = f"🌍 My Travel Match: {best['city']}, {best['country']} ({best.get('combined_score', 0)}% match)!  Find your perfect destination too!"
             
             st.text_area("📝 Share text:", value=share_text, height=80)
             
-            st.caption("💡 Copy the parameter above and add it to your app's URL to share your results with friends!")
+            st.caption("💡 Copy the link above and share it with friends!")
             
             if st.button("✕ Close", key="close_share"):
                 st.session_state.show_share_modal = False
@@ -1090,7 +1120,7 @@ def render_results_page():
 
 
 def render_shared_view_page():
-    """Renders the shared results view."""
+    """Renders the shared results view with images."""
     shared_data = st.session_state.get("shared_results", {})
     
     if not shared_data:
@@ -1116,7 +1146,6 @@ def render_shared_view_page():
     else:
         style_name = style.title()
     
-    # Use 3 columns + separate row for style to avoid truncation
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("💰 Budget", f"CHF {budget}")
@@ -1125,12 +1154,11 @@ def render_shared_view_page():
     with col3:
         st.metric("👥 Travelers", str(travelers))
     
-    # Style in its own row to prevent truncation
     st.markdown(f"**🎨 Travel Style:** {style_name}")
     
     st.divider()
     
-    # Rest of the function stays the same...
+    # Show results with images
     results = shared_data.get("r", [])
     
     if results:
@@ -1146,23 +1174,31 @@ def render_shared_view_page():
             total = (flight * travelers) + (daily * days * travelers)
             color = get_score_color(score)
             
+            # Medal emoji
             if i == 1:
-                st.markdown(f"### 🥇 {city}, {country}")
+                medal = "🥇"
             elif i == 2:
-                st.markdown(f"### 🥈 {city}, {country}")
+                medal = "🥈"
             else:
-                st.markdown(f"### 🥉 {city}, {country}")
+                medal = "🥉"
             
-            col1, col2, col3 = st.columns(3)
+            # Image and info layout
+            img_col, info_col = st.columns([1, 2])
             
-            with col1:
-                st.metric("Match Score", f"{color} {score}%")
+            with img_col:
+                image_url = get_thumbnail_url(city, country)
+                st.image(image_url, use_container_width=True)
             
-            with col2:
-                st.metric("✈️ Flight", f"CHF {flight}")
-            
-            with col3:
-                st.metric("💰 Total", f"CHF {int(total)}")
+            with info_col:
+                st.markdown(f"### {medal} {city}, {country}")
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Match Score", f"{color} {score}%")
+                with col2:
+                    st.metric("✈️ Flight", f"CHF {flight}")
+                with col3:
+                    st.metric("💰 Total", f"CHF {int(total)}")
             
             st.divider()
     else:
@@ -1176,6 +1212,7 @@ def render_shared_view_page():
         st.session_state.shared_results = None
         st.query_params.clear()
         st.rerun()
+
 
 # =============================================================================
 # MAIN APPLICATION
@@ -1222,7 +1259,7 @@ def main():
             st.caption("🌡️ Using current weather")
         
         st.divider()
-        st.caption("Travel Recommender v2.6")
+        st.caption("Travel Recommender v2.7")
         st.caption("CS Group 9.1")
     
     # === PAGE ROUTING ===
