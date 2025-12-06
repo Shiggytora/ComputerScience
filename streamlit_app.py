@@ -1114,9 +1114,9 @@ def render_shared_view_page():
     with col1:
         st.metric("💰 Budget", f"CHF {budget}")
     with col2:
-        st.metric("📅 Days", days)
+        st.metric("📅 Days", str(days))
     with col3:
-        st.metric("👥 Travelers", travelers)
+        st.metric("👥 Travelers", str(travelers))
     with col4:
         if style in TRAVEL_STYLES:
             st.metric("🎨 Style", TRAVEL_STYLES[style]["name"])
@@ -1134,33 +1134,35 @@ def render_shared_view_page():
         for i, dest in enumerate(results, 1):
             city = dest.get("c", "Unknown")
             country = dest.get("co", "")
-            score = dest.get("s", 0)
-            flight = dest.get("f", 0)
-            daily = dest.get("d", 0)
+            score = int(dest.get("s", 0))
+            flight = int(dest.get("f", 0))
+            daily = int(dest.get("d", 0))
             
             total = (flight * travelers) + (daily * days * travelers)
             color = get_score_color(score)
             
-            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+            # Use different layout for better display
+            if i == 1:
+                st.markdown(f"### 🥇 {city}, {country}")
+            elif i == 2:
+                st.markdown(f"### 🥈 {city}, {country}")
+            else:
+                st.markdown(f"### 🥉 {city}, {country}")
+            
+            col1, col2, col3 = st.columns(3)
             
             with col1:
-                if i == 1:
-                    st.markdown(f"### 🥇 {city}, {country}")
-                elif i == 2:
-                    st.markdown(f"### 🥈 {city}, {country}")
-                else:
-                    st.markdown(f"### 🥉 {city}, {country}")
+                st.metric("Match Score", f"{color} {score}%")
             
             with col2:
-                st.metric("Match", f"{color} {score}%")
-            
-            with col3:
                 st.metric("✈️ Flight", f"CHF {flight}")
             
-            with col4:
+            with col3:
                 st.metric("💰 Total", f"CHF {int(total)}")
             
             st.divider()
+    else:
+        st.warning("No recommendations found in shared link.")
     
     st.subheader("🚀 Find Your Own Match!")
     st.write("Want to find your perfect travel destination? ")
