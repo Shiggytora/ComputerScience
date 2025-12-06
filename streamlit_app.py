@@ -1110,7 +1110,7 @@ def render_shared_view_page():
     travelers = shared_data.get("n", 1)
     style = shared_data.get("st", "balanced")
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns([1.2, 0.8, 0.8, 1.2])
     with col1:
         st.metric("💰 Budget", f"CHF {budget}")
     with col2:
