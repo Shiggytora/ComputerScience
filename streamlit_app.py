@@ -1057,7 +1057,7 @@ def render_results_page():
                 
                 if encoded:
                     st.session_state.show_share_modal = True
-                    st.session_state.share_url = f"?share={encoded}"
+                    st.session_state.share_url = f"https://computerscience91.streamlit.app/?share={encoded}"
                     st.rerun()
         
         # === SHARE MODAL ===
