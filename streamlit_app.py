@@ -1118,10 +1118,14 @@ def render_shared_view_page():
     with col3:
         st.metric("👥 Travelers", str(travelers))
     with col4:
-        if style in TRAVEL_STYLES:
-            st.metric("🎨 Style", TRAVEL_STYLES[style]["name"])
-        else:
-            st.metric("🎨 Style", style.title())
+    if style in TRAVEL_STYLES:
+        style_name = TRAVEL_STYLES[style]["name"]
+        # Kürze lange Namen
+        if len(style_name) > 10:
+            style_name = style_name[:8] + "..."
+        st.metric("🎨 Style", style_name)
+    else:
+        st.metric("🎨 Style", style.title())
     
     st.divider()
     
