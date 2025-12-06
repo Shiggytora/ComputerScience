@@ -626,7 +626,7 @@ def render_start_page():
                         )
                         st.session_state.use_forecast = False
                 else:
-                    st.session_state use_forecast = False
+                    st.session_state.use_forecast = False
                 
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
