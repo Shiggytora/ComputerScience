@@ -25,7 +25,13 @@ from src.weather_matching import (
     enrich_destinations_with_forecast,
 )
 from src.insights import generate_preference_insights
-from src.session_manager import export_session, get_export_filename
+from src.session_manager import (
+    export_session,
+    get_export_filename,
+    create_share_data,
+    encode_share_data,
+    parse_shared_results,
+)
 from src.visuals import (
     create_preference_radar_chart,
     create_comparison_radar_chart,
@@ -57,7 +63,6 @@ LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
 MAX_DESTINATIONS = 50
 
-# Default origin for route map (Zurich)
 DEFAULT_ORIGIN = {
     "city": "Zurich",
     "latitude": 47.3769,
@@ -93,6 +98,8 @@ def initialize_session_state():
         "travel_date_start": None,
         "travel_date_end": None,
         "use_forecast": False,
+        "show_share_modal": False,
+        "share_url": "",
     }
     
     for key, value in defaults.items():
@@ -127,7 +134,7 @@ def get_current_round_locations() -> List[Dict[str, Any]]:
 
 def get_smart_round_locations() -> List[Dict[str, Any]]:
     """
-    Gets destinations for the current round with smart selection. 
+    Gets destinations for the current round with smart selection.
     
     Rounds 1-3: Random selection (exploration phase)
     Rounds 4+: Prioritizes destinations that match learned preferences
@@ -135,7 +142,6 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
     current_round = st.session_state.round
     round_key = f"locations_round_{current_round}"
     
-    # Return cached if exists
     if round_key in st.session_state and st.session_state[round_key]:
         return st.session_state[round_key]
     
@@ -147,19 +153,15 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
     if not available:
         return []
     
-    # Rounds 1-3: Pure random selection (exploration)
     if current_round < 3 or len(st.session_state.chosen) < 3:
         if len(available) <= LOCATIONS_PER_ROUND:
             locations = available
         else:
             locations = random.sample(available, LOCATIONS_PER_ROUND)
-    
-    # Rounds 4+: Smart selection based on learned preferences
     else:
         travel_style = st.session_state.get("travel_style", "balanced")
         use_weather = st.session_state.get("use_weather", True)
         
-        # Rank available destinations by match score
         ranked = ranking_destinations(
             available,
             st.session_state.chosen,
@@ -171,13 +173,8 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
         if len(ranked) <= LOCATIONS_PER_ROUND:
             locations = ranked
         else:
-            # Mix: 2 from top matches + 1 random (keeps variety)
-            top_pool = ranked[:10]  # Top 10 candidates
-            
-            # Select 2 from top matches
+            top_pool = ranked[:10]
             selected_top = random.sample(top_pool, min(2, len(top_pool)))
-            
-            # Select 1 random for variety
             remaining = [d for d in ranked if d not in selected_top]
             if remaining:
                 selected_other = random.sample(remaining, 1)
@@ -185,7 +182,7 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
                 selected_other = []
             
             locations = selected_top + selected_other
-            random.shuffle(locations)  # Shuffle so it looks random
+            random.shuffle(locations)
     
     st.session_state[round_key] = locations
     return locations
@@ -196,7 +193,7 @@ def process_selection(choice_id: int, locations: List[Dict[str, Any]]) -> bool:
     picked = next((loc for loc in locations if loc["id"] == choice_id), None)
     
     if picked is None:
-        st.error("Selected destination not found.  Please try again.")
+        st.error("Selected destination not found. Please try again.")
         return False
     
     st.session_state.chosen.append(picked)
@@ -255,7 +252,6 @@ def render_destination_card(loc: Dict[str, Any], index: int):
             st.markdown(f"### {loc['city']}")
             st.caption(f"📍 {loc['country']}")
             
-            # Show forecast or current temp
             if loc.get('forecast_temp') is not None:
                 st.caption(f"🌡️ Forecast: {loc['forecast_temp']}°C")
                 if loc.get('rain_days', 0) > 0:
@@ -417,7 +413,6 @@ def render_similar_destinations(
     if not similar:
         return
     
-    # Create a lookup for scores from ranked destinations
     score_lookup = {d.get('id'): d.get('combined_score', 0) for d in ranked}
     
     st.subheader("🔄 Similar Destinations You Might Like")
@@ -430,7 +425,6 @@ def render_similar_destinations(
         flight = dest.get('flight_price') or 0
         daily = dest.get('avg_budget_per_day') or 0
         
-        # Get the actual match score from ranked destinations
         dest_id = dest.get('id')
         combined = score_lookup.get(dest_id, dest.get('combined_score', 0))
         
@@ -466,7 +460,6 @@ def render_start_page():
     """Renders the start/configuration page."""
     st.subheader("🌍 Plan Your Trip")
     
-    # === BUDGET & TRAVELERS ===
     col1, col2 = st.columns(2)
     with col1:
         total_budget = st.number_input(
@@ -488,7 +481,6 @@ def render_start_page():
     
     st.divider()
     
-    # === TRAVEL DATES (replaces separate "When do you want to travel" section) ===
     st.subheader("📅 Travel Dates")
     
     date_col1, date_col2 = st.columns(2)
@@ -513,15 +505,12 @@ def render_start_page():
             help="When do you plan to return?"
         )
     
-    # Calculate trip length from dates
     trip_days = (travel_date_end - travel_date_start).days
     
-    # Show trip summary
     travelers_text = "person" if num_travelers == 1 else "people"
     days_text = "day" if trip_days == 1 else "days"
     st.info(f"💵 **CHF {total_budget}** total budget for **{num_travelers} {travelers_text}** over **{trip_days} {days_text}** (including flights)")
     
-    # Weather forecast availability
     days_until_travel = (travel_date_start - datetime.now().date()).days
     
     if days_until_travel <= 16 and days_until_travel >= 0:
@@ -531,8 +520,7 @@ def render_start_page():
     
     st.divider()
     
-    # === TRAVEL STYLE ===
-    st.subheader("🎨 What's Your Travel Style? ")
+    st.subheader("🎨 What's Your Travel Style?")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -554,26 +542,26 @@ def render_start_page():
                 st.session_state.travel_style = style_key
                 st.rerun()
     
-    cols2 = st.columns(len(row2_styles))
-    for i, style_key in enumerate(row2_styles):
-        style = TRAVEL_STYLES[style_key]
-        with cols2[i]:
-            btn_type = "primary" if selected_style == style_key else "secondary"
-            if st.button(
-                style["name"],
-                key=f"style_{style_key}",
-                use_container_width=True,
-                type=btn_type
-            ):
-                st.session_state.travel_style = style_key
-                st.rerun()
+    if row2_styles:
+        cols2 = st.columns(len(row2_styles))
+        for i, style_key in enumerate(row2_styles):
+            style = TRAVEL_STYLES[style_key]
+            with cols2[i]:
+                btn_type = "primary" if selected_style == style_key else "secondary"
+                if st.button(
+                    style["name"],
+                    key=f"style_{style_key}",
+                    use_container_width=True,
+                    type=btn_type
+                ):
+                    st.session_state.travel_style = style_key
+                    st.rerun()
     
     if selected_style in TRAVEL_STYLES:
         st.caption(f"_{TRAVEL_STYLES[selected_style]['description']}_")
     
     st.divider()
     
-    # === WEATHER PREFERENCES ===
     st.subheader("🌡️ Preferred Temperature")
     
     use_weather = st.checkbox(
@@ -604,23 +592,19 @@ def render_start_page():
     
     st.divider()
     
-    # === START BUTTON ===
     if st.button("🚀 Start Matching", type="primary", use_container_width=True):
         with st.spinner("Finding destinations within your budget..."):
             matches = filter_by_budget(total_budget, trip_days, num_travelers)
             
             if not matches:
-                st.error("❌ No destinations found within your budget.  Try increasing your budget or reducing travelers.")
+                st.error("❌ No destinations found within your budget. Try increasing your budget or reducing travelers.")
             else:
-                # Limit to max destinations for better performance
                 if len(matches) > MAX_DESTINATIONS:
                     matches = matches[:MAX_DESTINATIONS]
                 
-                # Calculate if forecast is available
                 days_until = (travel_date_start - datetime.now().date()).days
                 can_use_forecast = 0 <= days_until <= 16
                 
-                # Enrich with weather data
                 if use_weather:
                     start_str = travel_date_start.strftime("%Y-%m-%d")
                     end_str = travel_date_end.strftime("%Y-%m-%d")
@@ -642,9 +626,8 @@ def render_start_page():
                         )
                         st.session_state.use_forecast = False
                 else:
-                    st.session_state.use_forecast = False
+                    st.session_state use_forecast = False
                 
-                # Save to session state
                 st.session_state.budget_matches = matches
                 st.session_state.total_budget = total_budget
                 st.session_state.trip_days = trip_days
@@ -671,7 +654,6 @@ def render_matching_page():
     travel_date = st.session_state.get("travel_date_start")
     use_forecast = st.session_state.get("use_forecast", False)
     
-    # Show trip info
     if current_style in TRAVEL_STYLES:
         travelers_text = "traveler" if num_travelers == 1 else "travelers"
         info_text = f"Travel Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers} {travelers_text}"
@@ -685,11 +667,10 @@ def render_matching_page():
     st.subheader(f"🎲 Round {current_display_round} of {ROUNDS}")
     st.write("Select the destination that appeals to you most:")
     
-    # Use smart location selection (random for rounds 1-3, smart for 4+)
     locations = get_smart_round_locations()
     
     if not locations:
-        st.warning("⚠️ No more destinations available.  Proceeding to results...")
+        st.warning("⚠️ No more destinations available. Proceeding to results...")
         st.session_state.state = "Results"
         st.rerun()
         return
@@ -767,7 +748,6 @@ def render_results_page():
         st.success(f"### 🏆 {best['city']}, {best['country']}")
         st.write("Based on your preferences, this is your ideal destination!")
         
-        # Trip info caption
         if travel_style in TRAVEL_STYLES:
             travelers_text = "traveler" if num_travelers == 1 else "travelers"
             info_text = f"Travel style: {TRAVEL_STYLES[travel_style]['name']} | 👥 {num_travelers} {travelers_text}"
@@ -779,13 +759,11 @@ def render_results_page():
         
         st.divider()
         
-        # === KONFIDENZ-ANZEIGE ===
         confidence_data = calculate_recommendation_confidence(ranked)
         render_confidence_display(confidence_data)
         
         st.divider()
         
-        # === WORLD MAP ===
         st.subheader("🗺️ Your Destinations on the Map")
         
         map_tab1, map_tab2 = st.tabs(["🌍 Top 5 Matches", "✈️ Your Journey"])
@@ -811,7 +789,6 @@ def render_results_page():
         
         st.divider()
         
-        # Score Display
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -833,7 +810,6 @@ def render_results_page():
             safety = best.get('safety', 'N/A')
             st.metric("Safety Rating", f"🛡️ {safety}/5")
             
-            # Show forecast or current temp
             if use_forecast and best.get('forecast_temp') is not None:
                 st.metric("📅 Forecast Temp", f"🌡️ {best['forecast_temp']}°C")
                 if best.get('forecast_min') and best.get('forecast_max'):
@@ -841,7 +817,6 @@ def render_results_page():
             elif best.get('current_temp') is not None:
                 st.metric("Current Weather", f"🌡️ {best['current_temp']}°C")
         
-        # Rain warning
         if use_forecast and best.get('rain_days', 0) > 0:
             total_days = best.get('total_days', trip_days)
             rain_pct = (best['rain_days'] / total_days) * 100
@@ -852,7 +827,6 @@ def render_results_page():
         
         st.divider()
         
-        # Cost Breakdown
         st.subheader("💰 Cost Breakdown")
         
         flight_price = best.get('flight_price') or 0
@@ -899,7 +873,6 @@ def render_results_page():
         
         st.divider()
         
-        # === ÄHNLICHE DESTINATIONEN ===
         similar_destinations = find_similar_destinations(
             best,
             st.session_state.budget_matches,
@@ -909,7 +882,6 @@ def render_results_page():
         if similar_destinations:
             render_similar_destinations(similar_destinations, ranked, num_travelers, trip_days)
         
-        # === VISUALISIERUNGEN ===
         st.subheader("📊 Visual Insights")
         
         preference = preference_vector(st.session_state.chosen)
@@ -1018,7 +990,6 @@ def render_results_page():
         
         st.divider()
         
-        # Expanders
         with st.expander("📊 Match Score Details (Text)"):
             st.write("How well this destination matches your preferences:")
             render_score_breakdown(breakdown)
@@ -1034,7 +1005,6 @@ def render_results_page():
         with st.expander("🔍 Full Destination Details"):
             st.json(best)
         
-        # Other Great Options
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
@@ -1062,7 +1032,9 @@ def render_results_page():
         
         st.divider()
         
+        # === ACTION BUTTONS ===
         col1, col2, col3 = st.columns(3)
+        
         with col1:
             if st.button("🔄 Start Over", type="primary", use_container_width=True):
                 reset_session_state()
@@ -1080,13 +1052,124 @@ def render_results_page():
         
         with col3:
             if st.button("🔗 Share", use_container_width=True):
-                st.info("🚧 Share feature coming soon!")
+                share_data = create_share_data(ranked)
+                encoded = encode_share_data(share_data)
+                
+                if encoded:
+                    st.session_state.show_share_modal = True
+                    st.session_state.share_url = f"? share={encoded}"
+                    st.rerun()
+        
+        # === SHARE MODAL ===
+        if st.session_state.get("show_share_modal", False):
+            st.divider()
+            st.subheader("🔗 Share Your Results")
+            
+            share_url = st.session_state.get("share_url", "")
+            
+            st.success("✅ Share link created!")
+            st.caption("Add this to your app URL to share:")
+            st.code(share_url, language=None)
+            
+            # Create share text
+            share_text = f"🌍 My Travel Match: {best['city']}, {best['country']} ({best.get('combined_score', 0)}% match)!  Find your perfect destination too!"
+            
+            st.text_area("📝 Share text:", value=share_text, height=80)
+            
+            st.caption("💡 Copy the parameter above and add it to your app's URL to share your results with friends!")
+            
+            if st.button("✕ Close", key="close_share"):
+                st.session_state.show_share_modal = False
+                st.rerun()
     
     else:
-        st.error("❌ Unable to generate recommendations.  Please try again.")
+        st.error("❌ Unable to generate recommendations. Please try again.")
         if st.button("🔄 Start Over", type="primary"):
             reset_session_state()
             st.rerun()
+
+
+def render_shared_view_page():
+    """Renders the shared results view."""
+    shared_data = st.session_state.get("shared_results", {})
+    
+    if not shared_data:
+        st.error("❌ Invalid share link")
+        if st.button("🏠 Go to Start"):
+            st.session_state.state = "Start"
+            st.query_params.clear()
+            st.rerun()
+        return
+    
+    st.subheader("🔗 Shared Travel Recommendations")
+    st.info("Someone shared their travel match results with you!")
+    
+    # Show trip info
+    budget = shared_data.get("b", 0)
+    days = shared_data.get("t", 7)
+    travelers = shared_data.get("n", 1)
+    style = shared_data.get("st", "balanced")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("💰 Budget", f"CHF {budget}")
+    with col2:
+        st.metric("📅 Days", days)
+    with col3:
+        st.metric("👥 Travelers", travelers)
+    with col4:
+        if style in TRAVEL_STYLES:
+            st.metric("🎨 Style", TRAVEL_STYLES[style]["name"])
+        else:
+            st.metric("🎨 Style", style.title())
+    
+    st.divider()
+    
+    # Show results
+    results = shared_data.get("r", [])
+    
+    if results:
+        st.subheader("🏆 Top Recommendations")
+        
+        for i, dest in enumerate(results, 1):
+            city = dest.get("c", "Unknown")
+            country = dest.get("co", "")
+            score = dest.get("s", 0)
+            flight = dest.get("f", 0)
+            daily = dest.get("d", 0)
+            
+            total = (flight * travelers) + (daily * days * travelers)
+            color = get_score_color(score)
+            
+            col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+            
+            with col1:
+                if i == 1:
+                    st.markdown(f"### 🥇 {city}, {country}")
+                elif i == 2:
+                    st.markdown(f"### 🥈 {city}, {country}")
+                else:
+                    st.markdown(f"### 🥉 {city}, {country}")
+            
+            with col2:
+                st.metric("Match", f"{color} {score}%")
+            
+            with col3:
+                st.metric("✈️ Flight", f"CHF {flight}")
+            
+            with col4:
+                st.metric("💰 Total", f"CHF {int(total)}")
+            
+            st.divider()
+    
+    st.subheader("🚀 Find Your Own Match!")
+    st.write("Want to find your perfect travel destination? ")
+    
+    if st.button("🎯 Start My Own Matching", type="primary", use_container_width=True):
+        st.session_state.state = "Start"
+        st.session_state.shared_results = None
+        st.query_params.clear()
+        st.rerun()
 
 
 # =============================================================================
@@ -1096,6 +1179,14 @@ def render_results_page():
 def main():
     """Main application entry point."""
     initialize_session_state()
+    
+    # === CHECK FOR SHARED RESULTS ===
+    query_params = st.query_params
+    shared_data = parse_shared_results(dict(query_params))
+    
+    if shared_data and st.session_state.state == "Start":
+        st.session_state.shared_results = shared_data
+        st.session_state.state = "SharedView"
     
     st.title("✈️ Travel Matching")
     st.write("Find your perfect travel destination based on your preferences!")
@@ -1113,7 +1204,6 @@ def main():
         st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
         st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
         
-        # Show travel dates if set
         travel_date = st.session_state.get('travel_date_start')
         if travel_date:
             st.write(f"📅 Departure: {travel_date.strftime('%b %d, %Y')}")
@@ -1121,22 +1211,24 @@ def main():
         weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
         st.write(f"Weather: {weather_status}")
         
-        # Show forecast status
         if st.session_state.get("use_forecast"):
             st.caption("📡 Using weather forecast")
         elif st.session_state.get("use_weather"):
             st.caption("🌡️ Using current weather")
         
         st.divider()
-        st.caption("Travel Recommender v2.5")
+        st.caption("Travel Recommender v2.6")
         st.caption("CS Group 9.1")
     
+    # === PAGE ROUTING ===
     if st.session_state.state == "Start":
         render_start_page()
     elif st.session_state.state == "Matching":
         render_matching_page()
     elif st.session_state.state == "Results":
         render_results_page()
+    elif st.session_state.state == "SharedView":
+        render_shared_view_page()
 
 
 if __name__ == "__main__":
