@@ -1110,26 +1110,27 @@ def render_shared_view_page():
     travelers = shared_data.get("n", 1)
     style = shared_data.get("st", "balanced")
     
-    col1, col2, col3, col4 = st.columns([1.2, 0.8, 0.8, 1.2])
+    # Get full style name
+    if style in TRAVEL_STYLES:
+        style_name = TRAVEL_STYLES[style]["name"]
+    else:
+        style_name = style.title()
+    
+    # Use 3 columns + separate row for style to avoid truncation
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("💰 Budget", f"CHF {budget}")
     with col2:
         st.metric("📅 Days", str(days))
     with col3:
         st.metric("👥 Travelers", str(travelers))
-    with col4:
-        if style in TRAVEL_STYLES:
-            style_name = TRAVEL_STYLES[style]["name"]
-            # Kürze lange Namen
-            if len(style_name) > 10:
-                style_name = style_name[:8] + "..."
-            st.metric("🎨 Style", style_name)
-        else:
-            st.metric("🎨 Style", style.title())
+    
+    # Style in its own row to prevent truncation
+    st.markdown(f"**🎨 Travel Style:** {style_name}")
     
     st.divider()
     
-    # Show results
+    # Rest of the function stays the same...
     results = shared_data.get("r", [])
     
     if results:
@@ -1145,7 +1146,6 @@ def render_shared_view_page():
             total = (flight * travelers) + (daily * days * travelers)
             color = get_score_color(score)
             
-            # Use different layout for better display
             if i == 1:
                 st.markdown(f"### 🥇 {city}, {country}")
             elif i == 2:
@@ -1176,7 +1176,6 @@ def render_shared_view_page():
         st.session_state.shared_results = None
         st.query_params.clear()
         st.rerun()
-
 
 # =============================================================================
 # MAIN APPLICATION
