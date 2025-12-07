@@ -1,11 +1,7 @@
 """
 Visuals Module - Data Visualization Components
 
-This module provides visualization functions for the Travel Matching application,
-including radar charts for preference profiles, bar charts for score comparisons,
-and interactive maps for destination visualization.
-
-Uses Plotly for interactive charts. 
+Uses Plotly for interactive charts.
 """
 
 import plotly.graph_objects as go
@@ -54,17 +50,7 @@ def create_preference_radar_chart(
     title: str = "Your Travel Preferences",
     show_legend: bool = True
 ) -> go.Figure:
-    """
-    Creates a radar chart showing user preferences across all features.
-    
-    Args:
-        preferences: Dictionary mapping feature names to values (1-5 scale)
-        title: Chart title
-        show_legend: Whether to show the legend
-        
-    Returns:
-        Plotly Figure object
-    """
+    """Creates a radar chart showing user preferences across all features."""
     if not preferences:
         return None
     
@@ -137,17 +123,7 @@ def create_top_destinations_chart(
     num_destinations: int = 5,
     title: str = "Top Matching Destinations"
 ) -> go.Figure:
-    """
-    Creates a horizontal bar chart showing top destination matches.
-    
-    Args:
-        destinations: List of destination dictionaries with 'combined_score'
-        num_destinations: Number of top destinations to show
-        title: Chart title
-        
-    Returns:
-        Plotly Figure object
-    """
+    """Creates a horizontal bar chart showing top destination matches."""
     if not destinations:
         return None
     
@@ -221,20 +197,7 @@ def create_budget_comparison_chart(
     num_destinations: int = 5,
     title: str = "Budget Comparison"
 ) -> go.Figure:
-    """
-    Creates a grouped bar chart comparing flight and daily costs for top destinations.
-    
-    Args:
-        destinations: List of destination dictionaries
-        user_budget: User's total budget
-        num_travelers: Number of travelers
-        trip_days: Number of trip days
-        num_destinations: Number of destinations to show
-        title: Chart title
-        
-    Returns:
-        Plotly Figure object
-    """
+    """Creates a grouped bar chart comparing flight and daily costs."""
     if not destinations:
         return None
     
@@ -314,17 +277,7 @@ def create_weather_score_chart(
     num_destinations: int = 5,
     title: str = "Weather Compatibility"
 ) -> go.Figure:
-    """
-    Creates a bar chart showing weather scores with temperature labels.
-    
-    Args:
-        destinations: List of destination dictionaries with weather data
-        num_destinations: Number of destinations to show
-        title: Chart title
-        
-    Returns:
-        Plotly Figure object
-    """
+    """Creates a bar chart showing weather scores with temperature labels."""
     if not destinations:
         return None
     
@@ -396,17 +349,7 @@ def create_destinations_map(
     highlight_best: bool = True,
     title: str = "Your Matching Destinations"
 ) -> go.Figure:
-    """
-    Creates an interactive world map showing all matching destinations.
-    
-    Args:
-        destinations: List of destination dictionaries with lat/lon
-        highlight_best: Whether to highlight the best match in gold
-        title: Chart title
-        
-    Returns:
-        Plotly Figure object with interactive map
-    """
+    """Creates an interactive world map showing all matching destinations."""
     if not destinations:
         return None
     
@@ -415,7 +358,6 @@ def create_destinations_map(
     names = []
     scores = []
     texts = []
-    sizes = []
     colors = []
     
     for i, dest in enumerate(destinations):
@@ -444,8 +386,7 @@ def create_destinations_map(
             hover_text += f"Flight: CHF {flight}"
         texts.append(hover_text)
         
-        sizes.append(max(12, min(35, score / 3)))
-        
+        # Color: best match is gold, others by score
         if i == 0 and highlight_best:
             colors.append("#FFD700")
         elif score >= 80:
@@ -462,21 +403,22 @@ def create_destinations_map(
     
     fig = go.Figure()
     
+    # Add destination markers - ALL SAME SIZE
     fig.add_trace(go.Scattergeo(
         lat=lats,
         lon=lons,
         text=texts,
         hoverinfo='text',
         marker=dict(
-            size=sizes,
+            size=20,
             color=colors,
             line=dict(width=1, color='white'),
-            sizemode='diameter',
             opacity=0.85,
         ),
         name='Destinations'
     ))
     
+    # Add rank labels for top 5
     for i in range(min(5, len(lats))):
         fig.add_trace(go.Scattergeo(
             lat=[lats[i]],

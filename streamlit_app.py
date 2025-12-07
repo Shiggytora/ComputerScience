@@ -13,23 +13,26 @@ from src.matching import (
     test_locations,
     ranking_destinations,
     preference_vector,
-    TRAVEL_STYLES,)
-
+    calculate_feature_ranges,
+    get_travel_style_weights,
+    TRAVEL_STYLES,
+)
 from src.weather_matching import (
     enrich_destinations_with_weather,
-    enrich_destinations_with_forecast,)
-
-from src.insights import generate_preference_insights
+    enrich_destinations_with_forecast,
+)
 from src.visuals import (
     create_preference_radar_chart,
     create_top_destinations_chart,
     create_budget_comparison_chart,
     create_weather_score_chart,
-    create_destinations_map,)
-
+    create_destinations_map,
+    FEATURE_CONFIG,
+)
 from src.images import (
     get_thumbnail_url,
-    get_hero_image_url,)
+    get_hero_image_url,
+)
 
 # =============================================================================
 # CONFIGURATION
@@ -267,101 +270,6 @@ def render_progress_bar():
         st.info(f"🎯 {remaining} round{plural} remaining until your recommendation!")
 
 
-def render_insights(insights: Dict[str, Any]):
-    """Renders user preference insights."""
-    if not insights:
-        return
-    
-    st.subheader("🔍 What We Learned About You")
-    
-    if insights.get("patterns"):
-        for pattern in insights["patterns"]:
-            st.write(pattern)
-    else:
-        st.write("Complete more rounds to discover your travel preferences!")
-    
-    if insights.get("preferences"):
-        st.write("**Your Average Preferences:**")
-        
-        prefs = insights["preferences"]
-        
-        labels = {
-            "safety": "🛡️ Safety",
-            "beach": "🏖️ Beach",
-            "culture": "🏛️ Culture",
-            "nature": "🌿 Nature",
-            "food": "🍽️ Food",
-            "nightlife": "🌙 Nightlife",
-            "adventure": "🏔️ Adventure",
-            "romance": "💕 Romance",
-            "family": "👨‍👩‍👧‍👦 Family",
-        }
-        
-        display_prefs = {k: v for k, v in prefs.items() if k in labels}
-        
-        if display_prefs:
-            num_cols = min(len(display_prefs), 5)
-            cols = st.columns(num_cols)
-            
-            for i, (key, value) in enumerate(list(display_prefs.items())[:5]):
-                with cols[i]:
-                    label = labels.get(key, key)
-                    value_rounded = round(value, 1)
-                    st.metric(label, str(value_rounded))
-
-
-def render_similar_destinations(
-    similar: List[Dict[str, Any]],
-    ranked: List[Dict[str, Any]],
-    num_travelers: int,
-    trip_days: int
-):
-    """Renders the similar destinations section with images and correct scores."""
-    if not similar:
-        return
-    
-    score_lookup = {d.get('id'): d.get('combined_score', 0) for d in ranked}
-    
-    st.subheader("🔄 Similar Destinations You Might Like")
-    st.caption("These destinations have a similar profile to your top match")
-    
-    for dest in similar:
-        similarity = dest.get('similarity_score', 0)
-        city = dest.get('city', 'Unknown')
-        country = dest.get('country', '')
-        flight = dest.get('flight_price') or 0
-        daily = dest.get('avg_budget_per_day') or 0
-        
-        dest_id = dest.get('id')
-        combined = score_lookup.get(dest_id, dest.get('combined_score', 0))
-        
-        total = (flight * num_travelers) + (daily * trip_days * num_travelers)
-        
-        img_col, info_col = st.columns([1, 2])
-        
-        with img_col:
-            image_url = get_thumbnail_url(city, country)
-            st.image(image_url, use_container_width=True)
-        
-        with info_col:
-            st.write(f"**{city}, {country}**")
-            st.caption(f"🔄 {similarity}% similar to your top match")
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                color = get_score_color(combined)
-                st.write(f"{color} {combined}%")
-                st.caption("Match")
-            with col2:
-                st.write(f"✈️ CHF {flight * num_travelers}")
-                st.caption("Flights")
-            with col3:
-                st.write(f"💰 CHF {int(total)}")
-                st.caption("Total")
-        
-        st.divider()
-
-
 # =============================================================================
 # PAGE RENDERERS
 # =============================================================================
@@ -426,11 +334,11 @@ def render_start_page():
     if days_until_travel <= 16 and days_until_travel >= 0:
         st.success("✅ Weather forecast available for your travel dates!")
     elif days_until_travel > 16:
-        st.warning(f"⚠️ Travel date is {days_until_travel} days away.Using current weather data as estimate.")
+        st.warning(f"⚠️ Travel date is {days_until_travel} days away. Using current weather data as estimate.")
     
     st.divider()
     
-    st.subheader("🎨 What's Your Travel Style? ")
+    st.subheader("🎨 What's Your Travel Style?")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -676,9 +584,47 @@ def render_results_page():
                 info_text += " | 🌤️ Using weather forecast"
             st.caption(info_text)
         
+        # === OTHER GREAT OPTIONS ===
+        if len(ranked) > 1:
+            st.divider()
+            st.subheader("🥈 Other Great Options")
+            
+            for i, dest in enumerate(ranked[1:6], 2):
+                combined = dest.get('combined_score', 0)
+                flight = dest.get('flight_price') or 0
+                daily = dest.get('avg_budget_per_day') or 0
+                city = dest.get('city', '')
+                country = dest.get('country', '')
+                
+                total = (flight * num_travelers) + (daily * trip_days * num_travelers)
+                dest_color = get_score_color(combined)
+                
+                img_col, info_col = st.columns([1, 3])
+                
+                with img_col:
+                    image_url = get_thumbnail_url(city, country)
+                    st.image(image_url, use_container_width=True)
+                
+                with info_col:
+                    st.write(f"**{i}.{city}, {country}**")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.write(f"{dest_color} {combined}%")
+                        st.caption("Match")
+                    with col2:
+                        if num_travelers > 1:
+                            st.write(f"✈️ CHF {flight * num_travelers}")
+                        else:
+                            st.write(f"✈️ CHF {flight}")
+                        st.caption("Flights")
+                    with col3:
+                        st.write(f"💰 CHF {int(total)}")
+                        st.caption("Total")
+        
         st.divider()
         
-        # === MAP - Only Top 5 Matches ===
+        # === MAP ===
         st.subheader("🗺️ Your Top Destinations on the Map")
         destinations_map = create_destinations_map(
             ranked[:5],
@@ -687,7 +633,7 @@ def render_results_page():
         )
         if destinations_map:
             st.plotly_chart(destinations_map, use_container_width=True)
-            st.caption("🥇 Gold = Best match | Larger markers = Higher scores")
+            st.caption("🥇 Gold = Best match")
         
         st.divider()
         
@@ -790,51 +736,9 @@ def render_results_page():
         
         st.divider()
         
-        with st.expander("🔍 Your Travel Insights"):
-            insights = generate_preference_insights(st.session_state.chosen)
-            render_insights(insights)
-        
         with st.expander("📋 Your Selections During Matching"):
             for i, chosen in enumerate(st.session_state.chosen, 1):
                 st.write(f"**Round {i}:** {chosen['city']}, {chosen['country']}")
-        
-        # === OTHER GREAT OPTIONS WITH IMAGES ===
-        if len(ranked) > 1:
-            st.divider()
-            st.subheader("🥈 Other Great Options")
-            
-            for i, dest in enumerate(ranked[1:6], 2):
-                combined = dest.get('combined_score', 0)
-                flight = dest.get('flight_price') or 0
-                daily = dest.get('avg_budget_per_day') or 0
-                city = dest.get('city', '')
-                country = dest.get('country', '')
-                
-                total = (flight * num_travelers) + (daily * trip_days * num_travelers)
-                color = get_score_color(combined)
-                
-                img_col, info_col = st.columns([1, 3])
-                
-                with img_col:
-                    image_url = get_thumbnail_url(city, country)
-                    st.image(image_url, use_container_width=True)
-                
-                with info_col:
-                    st.write(f"**{i}.{city}, {country}**")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.write(f"{color} {combined}%")
-                        st.caption("Match")
-                    with col2:
-                        if num_travelers > 1:
-                            st.write(f"✈️ CHF {flight * num_travelers}")
-                        else:
-                            st.write(f"✈️ CHF {flight}")
-                        st.caption("Flights")
-                    with col3:
-                        st.write(f"💰 CHF {int(total)}")
-                        st.caption("Total")
         
         st.divider()
         
