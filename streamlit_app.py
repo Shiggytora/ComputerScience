@@ -416,6 +416,9 @@ def render_start_page():
             st.success(f"✅ Found {len(matches)} destinations!")
             st.rerun()
 
+    st.divider()
+    st.caption("📷 Images from [Unsplash](https://unsplash.com) | 🌤️ Weather data from [Open-Meteo](https://open-meteo.com)")
+
 
 # Page: Matching
 
