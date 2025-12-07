@@ -88,12 +88,11 @@ def reset_session_state():
 
 
 
-'''
-Matching logic functions: Core logic for selecting and ranking destinations:
-    - Get destinations for current round.
-    - First 3 rounds: random (to explore preferences)
-    - Later rounds: prioritize better matches based on what user picked
-'''
+# Matching logic functions: Core logic for selecting and ranking destinations:
+    # Get destinations for current round.
+    # First 3 rounds: random (to explore preferences)
+    # Later rounds: prioritize better matches based on what user picked
+
 # Get destinations for current round
 def get_smart_round_locations() -> List[Dict[str, Any]]:
     current_round = st.session_state.round
@@ -168,9 +167,8 @@ def process_selection(choice_id: int, locations: List[Dict[str, Any]]) -> bool:
 
 
 
-'''
-UI helpers: Helper functions for UI elements like score colors, labels, temperature display, and rendering destination cards.
-'''
+# UI helpers: Helper functions for UI elements like score colors, labels, temperature display, and rendering destination cards.
+
 # Score color depending on value
 def get_score_color(score: float) -> str:
     if score >= 80:
