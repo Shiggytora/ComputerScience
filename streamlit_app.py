@@ -13,34 +13,23 @@ from src.matching import (
     test_locations,
     ranking_destinations,
     preference_vector,
-    calculate_feature_ranges,
-    get_match_breakdown,
-    get_travel_style_weights,
-    find_similar_destinations,
-    calculate_recommendation_confidence,
-    TRAVEL_STYLES,
-)
+    TRAVEL_STYLES,)
+
 from src.weather_matching import (
     enrich_destinations_with_weather,
-    enrich_destinations_with_forecast,
-)
+    enrich_destinations_with_forecast,)
+
 from src.insights import generate_preference_insights
 from src.visuals import (
     create_preference_radar_chart,
-    create_score_breakdown_chart,
     create_top_destinations_chart,
     create_budget_comparison_chart,
     create_weather_score_chart,
-    create_score_gauge,
-    create_destinations_map,
-    create_route_map,
-    FEATURE_CONFIG,
-)
+    create_destinations_map,)
+
 from src.images import (
-    get_destination_image,
     get_thumbnail_url,
-    get_hero_image_url,
-)
+    get_hero_image_url,)
 
 # =============================================================================
 # CONFIGURATION
@@ -59,12 +48,6 @@ DEFAULT_TRAVELERS = 1
 LOCATIONS_PER_ROUND = 3
 WEATHER_WEIGHT = 0.2
 MAX_DESTINATIONS = 50
-
-DEFAULT_ORIGIN = {
-    "city": "Zurich",
-    "latitude": 47.3769,
-    "longitude": 8.5417
-}
 
 st.set_page_config(
     page_title="Travel Matching",
@@ -284,30 +267,6 @@ def render_progress_bar():
         st.info(f"🎯 {remaining} round{plural} remaining until your recommendation!")
 
 
-def render_match_score_display(score: float, label: str = "Match Score"):
-    """Renders a visual match score display."""
-    color = get_score_color(score)
-    score_label = get_score_label(score)
-    
-    st.markdown(f"### {color} {label}: {score}%")
-    st.caption(score_label)
-    st.progress(score / 100)
-
-
-def render_confidence_display(confidence_data: Dict[str, Any]):
-    """Renders the recommendation confidence indicator."""
-    confidence = confidence_data.get('confidence', 0)
-    label = confidence_data.get('label', 'Unknown')
-    emoji = confidence_data.get('emoji', '❓')
-    recommendation = confidence_data.get('recommendation', '')
-    gap = confidence_data.get('gap_to_second', 0)
-    
-    st.markdown(f"### {emoji} Recommendation Confidence: {label}")
-    st.progress(confidence / 100)
-    st.caption(f"Score gap to #2: {gap} points")
-    st.info(f"💡 {recommendation}")
-
-
 def render_insights(insights: Dict[str, Any]):
     """Renders user preference insights."""
     if not insights:
@@ -467,7 +426,7 @@ def render_start_page():
     if days_until_travel <= 16 and days_until_travel >= 0:
         st.success("✅ Weather forecast available for your travel dates!")
     elif days_until_travel > 16:
-        st.warning(f"⚠️ Travel date is {days_until_travel} days away. Using current weather data as estimate.")
+        st.warning(f"⚠️ Travel date is {days_until_travel} days away.Using current weather data as estimate.")
     
     st.divider()
     
@@ -699,7 +658,13 @@ def render_results_page():
         hero_image_url = get_hero_image_url(best.get('city', ''), best.get('country', ''))
         st.image(hero_image_url, use_container_width=True)
         
+        # === DESTINATION NAME AND SCORE ===
+        combined_score = best.get('combined_score', 0)
+        color = get_score_color(combined_score)
+        score_label = get_score_label(combined_score)
+        
         st.success(f"### 🏆 {best['city']}, {best['country']}")
+        st.markdown(f"**{color} Overall Score: {combined_score}%** - {score_label}")
         st.write("Based on your preferences, this is your ideal destination!")
         
         if travel_style in TRAVEL_STYLES:
@@ -713,74 +678,20 @@ def render_results_page():
         
         st.divider()
         
-        confidence_data = calculate_recommendation_confidence(ranked)
-        render_confidence_display(confidence_data)
+        # === MAP - Only Top 5 Matches ===
+        st.subheader("🗺️ Your Top Destinations on the Map")
+        destinations_map = create_destinations_map(
+            ranked[:5],
+            highlight_best=True,
+            title="Top 5 Matching Destinations"
+        )
+        if destinations_map:
+            st.plotly_chart(destinations_map, use_container_width=True)
+            st.caption("🥇 Gold = Best match | Larger markers = Higher scores")
         
         st.divider()
         
-        st.subheader("🗺️ Your Destinations on the Map")
-        
-        map_tab1, map_tab2 = st.tabs(["🌍 Top 5 Matches", "✈️ Your Journey"])
-        
-        with map_tab1:
-            destinations_map = create_destinations_map(
-                ranked[:5],
-                highlight_best=True,
-                title="Top 5 Matching Destinations"
-            )
-            if destinations_map:
-                st.plotly_chart(destinations_map, use_container_width=True)
-                st.caption("🥇 Gold = Best match | Larger markers = Higher scores")
-        
-        with map_tab2:
-            route_map = create_route_map(
-                DEFAULT_ORIGIN,
-                best,
-                title=f"Zurich → {best['city']}, {best['country']}"
-            )
-            if route_map:
-                st.plotly_chart(route_map, use_container_width=True)
-        
-        st.divider()
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            combined_score = best.get('combined_score', 0)
-            render_match_score_display(combined_score, "Overall Score")
-        
-        with col2:
-            match_score = best.get('match_score', 0)
-            color = get_score_color(match_score)
-            st.metric("🎯 Match Score", f"{color} {match_score}%")
-            
-            if use_weather:
-                weather_score = best.get('weather_score', 50)
-                w_color = get_score_color(weather_score)
-                weather_label = "🌤️ Forecast Score" if use_forecast else "🌤️ Weather Score"
-                st.metric(weather_label, f"{w_color} {weather_score}%")
-        
-        with col3:
-            safety = best.get('safety', 'N/A')
-            st.metric("Safety Rating", f"🛡️ {safety}/5")
-            
-            if use_forecast and best.get('forecast_temp') is not None:
-                st.metric("📅 Forecast Temp", f"🌡️ {best['forecast_temp']}°C")
-                if best.get('forecast_min') and best.get('forecast_max'):
-                    st.caption(f"Range: {best['forecast_min']}°C - {best['forecast_max']}°C")
-            elif best.get('current_temp') is not None:
-                st.metric("Current Weather", f"🌡️ {best['current_temp']}°C")
-        
-        if use_forecast and best.get('rain_days', 0) > 0:
-            total_days = best.get('total_days', trip_days)
-            rain_pct = (best['rain_days'] / total_days) * 100
-            if rain_pct > 50:
-                st.warning(f"🌧️ Expect rain on {best['rain_days']} of {total_days} days ({rain_pct:.0f}%)")
-            else:
-                st.info(f"🌧️ Light rain expected on {best['rain_days']} of {total_days} days")
-        
-        st.divider()
-        
+        # === COST BREAKDOWN ===
         st.subheader("💰 Cost Breakdown")
         
         flight_price = best.get('flight_price') or 0
@@ -827,12 +738,10 @@ def render_results_page():
         
         st.divider()
         
+        # === VISUAL INSIGHTS ===
         st.subheader("📊 Visual Insights")
         
         preference = preference_vector(st.session_state.chosen)
-        feature_ranges = calculate_feature_ranges(st.session_state.budget_matches)
-        weights = get_travel_style_weights(travel_style)
-        breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
         
         viz_tab1, viz_tab2, viz_tab3 = st.tabs([
             "🎯 Preference Profile",
@@ -951,6 +860,40 @@ def main():
     
     st.title("✈️ Travel Matching")
     st.write("Find your perfect travel destination based on your preferences!")
+    
+    with st.sidebar:
+        st.subheader("ℹ️ About")
+        st.write("This app helps you find your ideal travel destination through an interactive matching process.")
+        
+        st.divider()
+        
+        st.subheader("🔧 Session Info")
+        st.write(f"State: {st.session_state.state}")
+        st.write(f"Round: {st.session_state.round}/{ROUNDS}")
+        st.write(f"Selections: {len(st.session_state.chosen)}")
+        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
+        st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
+        
+        travel_date = st.session_state.get('travel_date_start')
+        if travel_date:
+            st.write(f"📅 Departure: {travel_date.strftime('%b %d, %Y')}")
+        
+        weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
+        st.write(f"Weather: {weather_status}")
+        
+        if st.session_state.get("use_forecast"):
+            st.caption("📡 Using weather forecast")
+        elif st.session_state.get("use_weather"):
+            st.caption("🌡️ Using current weather")
+
+        st.divider()
+
+        from src.images import get_cache_stats
+        stats = get_cache_stats()
+        st.caption(f"📷 {stats['total_cached']} images cached")
+        
+        st.caption("Travel Recommender v7.1")
+        st.caption("CS Group 9.1")
     
     # === PAGE ROUTING ===
     if st.session_state.state == "Start":
