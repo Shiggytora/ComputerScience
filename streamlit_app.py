@@ -13,8 +13,6 @@ from src.matching import (
     test_locations,
     ranking_destinations,
     preference_vector,
-    calculate_feature_ranges,
-    get_travel_style_weights,
     TRAVEL_STYLES,
 )
 from src.weather_matching import (
@@ -27,7 +25,6 @@ from src.visuals import (
     create_budget_comparison_chart,
     create_weather_score_chart,
     create_destinations_map,
-    FEATURE_CONFIG,
 )
 from src.images import (
     get_thumbnail_url,
@@ -584,12 +581,12 @@ def render_results_page():
                 info_text += " | 🌤️ Using weather forecast"
             st.caption(info_text)
         
-        # === OTHER GREAT OPTIONS ===
+        # === OTHER GREAT OPTIONS (Top 2-5) ===
         if len(ranked) > 1:
             st.divider()
             st.subheader("🥈 Other Great Options")
             
-            for i, dest in enumerate(ranked[1:6], 2):
+            for i, dest in enumerate(ranked[1:5], 2):
                 combined = dest.get('combined_score', 0)
                 flight = dest.get('flight_price') or 0
                 daily = dest.get('avg_budget_per_day') or 0
@@ -706,8 +703,8 @@ def render_results_page():
         with viz_tab2:
             top_dest_fig = create_top_destinations_chart(
                 ranked,
-                num_destinations=7,
-                title="Top 7 Matching Destinations"
+                num_destinations=10,
+                title="Top 10 Matching Destinations"
             )
             if top_dest_fig:
                 st.plotly_chart(top_dest_fig, use_container_width=True)

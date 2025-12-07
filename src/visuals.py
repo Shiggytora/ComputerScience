@@ -104,6 +104,7 @@ def create_preference_radar_chart(
             text=title,
             font=dict(size=16, color=COLORS["text"]),
             x=0.5,
+            xanchor='center',
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -170,6 +171,7 @@ def create_top_destinations_chart(
             text=title,
             font=dict(size=16),
             x=0.5,
+            xanchor='center',
         ),
         xaxis=dict(
             title="Match Score (%)",
@@ -183,7 +185,7 @@ def create_top_destinations_chart(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(l=150, r=40, t=60, b=40),
-        height=max(250, num_destinations * 50),
+        height=max(250, num_destinations * 40),
     )
     
     return fig
@@ -249,6 +251,7 @@ def create_budget_comparison_chart(
             text=title,
             font=dict(size=16),
             x=0.5,
+            xanchor='center',
         ),
         xaxis=dict(title="Destination"),
         yaxis=dict(
@@ -324,6 +327,7 @@ def create_weather_score_chart(
             text=title,
             font=dict(size=16),
             x=0.5,
+            xanchor='center',
         ),
         xaxis=dict(title="Destination"),
         yaxis=dict(
@@ -386,7 +390,6 @@ def create_destinations_map(
             hover_text += f"Flight: CHF {flight}"
         texts.append(hover_text)
         
-        # Color: best match is gold, others by score
         if i == 0 and highlight_best:
             colors.append("#FFD700")
         elif score >= 80:
@@ -403,7 +406,6 @@ def create_destinations_map(
     
     fig = go.Figure()
     
-    # Add destination markers - ALL SAME SIZE
     fig.add_trace(go.Scattergeo(
         lat=lats,
         lon=lons,
@@ -418,7 +420,6 @@ def create_destinations_map(
         name='Destinations'
     ))
     
-    # Add rank labels for top 5
     for i in range(min(5, len(lats))):
         fig.add_trace(go.Scattergeo(
             lat=[lats[i]],
@@ -435,6 +436,7 @@ def create_destinations_map(
             text=title,
             font=dict(size=18),
             x=0.5,
+            xanchor='center',
         ),
         geo=dict(
             showland=True,

@@ -4,9 +4,6 @@ Matching Module - Core Recommendation Engine
 
 import random
 from typing import List, Dict, Any, Optional
-import numpy as np
-from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import MinMaxScaler
 from src.data import get_destinations_by_budget, get_all_destinations
 
 # =============================================================================
