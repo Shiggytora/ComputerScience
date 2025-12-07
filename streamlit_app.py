@@ -583,43 +583,6 @@ def render_results_page():
                 info_text += " | 🌤️ Using weather forecast"
             st.caption(info_text)
         
-        # === OTHER GREAT OPTIONS (Top 2-5) ===
-        if len(ranked) > 1:
-            st.divider()
-            st.subheader("🥈 Other Great Options")
-            
-            for i, dest in enumerate(ranked[1:5], 2):
-                combined = dest.get('combined_score', 0)
-                flight = dest.get('flight_price') or 0
-                daily = dest.get('avg_budget_per_day') or 0
-                city = dest.get('city', '')
-                country = dest.get('country', '')
-                
-                total = (flight * num_travelers) + (daily * trip_days * num_travelers)
-                dest_color = get_score_color(combined)
-                
-                img_col, info_col = st.columns([1, 3])
-                
-                with img_col:
-                    image_url = get_thumbnail_url(city, country)
-                    st.image(image_url, use_container_width=True)
-                
-                with info_col:
-                    st.write(f"**{i}.{city}, {country}**")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.write(f"{dest_color} {combined}%")
-                        st.caption("Match")
-                    with col2:
-                        if num_travelers > 1:
-                            st.write(f"✈️ CHF {flight * num_travelers}")
-                        else:
-                            st.write(f"✈️ CHF {flight}")
-                        st.caption("Flights")
-                    with col3:
-                        st.write(f"💰 CHF {int(total)}")
-                        st.caption("Total")
         
         # === SIMILAR DESTINATIONS (ML-POWERED) ===
         st.divider()
