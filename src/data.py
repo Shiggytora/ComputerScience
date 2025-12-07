@@ -13,6 +13,8 @@ DB_PATH = Path(__file__).parent.parent / "data" / "travel.db"
 
 def get_connection():
     """Create database connection."""
+    if not DB_PATH.exists():
+        raise FileNotFoundError(f"Database not found: {DB_PATH}")
     return sqlite3.connect(DB_PATH)
 
 

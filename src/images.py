@@ -10,7 +10,7 @@ from pathlib import Path
 # Try Streamlit secrets first, then .env
 try:
     import streamlit as st
-    UNSPLASH_ACCESS_KEY = st.secrets.get("UNSPLASH_ACCESS_KEY")
+    UNSPLASH_ACCESS_KEY = st.secrets.get("UNSPLASH_ACCESS_KEY", None)
 except Exception:
     UNSPLASH_ACCESS_KEY = None
 

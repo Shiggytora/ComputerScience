@@ -189,7 +189,7 @@ def get_score_label(score: float) -> str:
     return "Less Compatible"
 
 
-def get_temperature_display(dest: Dict[str, Any], is_forecast: bool = True) -> str:
+def get_temperature_display(dest: Dict[str, Any]) -> str:
     """Get temperature string for a destination."""
     forecast_temp = dest.get('forecast_temp')
     current_temp = dest.get('current_temp')
@@ -572,9 +572,9 @@ def render_results_page():
     with c4:
         remaining = st.session_state.total_budget - total_cost
         if remaining >= 0:
-            st.metric("💚 Left", f"CHF {int(remaining)}")
+            st.metric("💚 Budget left", f"CHF {int(remaining)}")
         else:
-            st.metric("🔴 Over", f"CHF {int(abs(remaining))}")
+            st.metric("🔴 Over budget", f"CHF {int(abs(remaining))}")
     
     st.divider()
     
@@ -628,7 +628,7 @@ def render_results_page():
     dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Based on Your Preferences")
     if dest_map:
         st.plotly_chart(dest_map, use_container_width=True)    
-        
+
     st.divider()
     
     # 6. Charts

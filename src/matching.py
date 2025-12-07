@@ -3,8 +3,7 @@ Matching algorithm for travel recommendations.
 Learns user preferences and uses KNN for finding similar destinations.
 """
 
-import random
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
