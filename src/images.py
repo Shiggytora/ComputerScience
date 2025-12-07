@@ -83,10 +83,10 @@ def get_destination_image(destination: dict, size: str = "800x400") -> str:
 
 
 def get_thumbnail_url(city: str, country: str = "") -> str:
-    """Returns a small thumbnail image (400x250)."""
-    return get_city_image_url(city, country, "400x250")
+    """Returns a small thumbnail image (800x500)."""
+    return get_city_image_url(city, country, "800x500")
 
 
 def get_hero_image_url(city: str, country: str = "") -> str:
-    """Returns a large hero image (1200x600)."""
-    return get_city_image_url(city, country, "1200x600")
+    """Returns a large hero image (1600x900)."""
+    return get_city_image_url(city, country, "1600x900")
