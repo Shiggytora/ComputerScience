@@ -1248,9 +1248,14 @@ def main():
             st.caption("📡 Using weather forecast")
         elif st.session_state.get("use_weather"):
             st.caption("🌡️ Using current weather")
-        
+
         st.divider()
-        st.caption("Travel Recommender v2.7")
+
+        from src.images import get_cache_stats
+        stats = get_cache_stats()
+        st.caption(f"📷 {stats['total_cached']} images cached")
+        
+        st.caption("Travel Recommender v7.1")
         st.caption("CS Group 9.1")
     
     # === PAGE ROUTING ===
