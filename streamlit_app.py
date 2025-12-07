@@ -892,15 +892,6 @@ def render_results_page():
         
         st.divider()
         
-        similar_destinations = find_similar_destinations(
-            best,
-            st.session_state.budget_matches,
-            num_similar=3
-        )
-        
-        if similar_destinations:
-            render_similar_destinations(similar_destinations, ranked, num_travelers, trip_days)
-        
         st.subheader("📊 Visual Insights")
         
         preference = preference_vector(st.session_state.chosen)
