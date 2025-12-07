@@ -686,10 +686,11 @@ def render_results_page():
         
         preference = preference_vector(st.session_state.chosen)
         
-        viz_tab1, viz_tab2, viz_tab3 = st.tabs([
+        viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
             "🎯 Preference Profile",
             "🏆 Top Destinations",
-            "💰 Budget & Weather"
+            "💰 Budget",
+            "🌤️ Weather"
         ])
         
         with viz_tab1:
@@ -720,9 +721,9 @@ def render_results_page():
             )
             if budget_fig:
                 st.plotly_chart(budget_fig, use_container_width=True)
-            
+        
+        with viz_tab4:
             if use_weather:
-                st.write("---")
                 weather_fig = create_weather_score_chart(
                     ranked,
                     num_destinations=5,
@@ -730,6 +731,8 @@ def render_results_page():
                 )
                 if weather_fig:
                     st.plotly_chart(weather_fig, use_container_width=True)
+            else:
+                st.info("Weather data was not included in this search.")
         
         st.divider()
         
