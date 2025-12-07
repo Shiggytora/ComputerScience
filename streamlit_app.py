@@ -586,7 +586,7 @@ def render_results_page():
         
         # === SIMILAR DESTINATIONS (ML-POWERED) ===
         st.divider()
-        st.subheader("🤖 Similar Destinations (AI-Powered)")
+        st.subheader("🤖 Similar Destinations to your top destination")
         st.caption("Found using Machine Learning (K-Nearest Neighbors with scikit-learn)")
         
         similar = find_similar_destinations(best, ranked, num_similar=3)
