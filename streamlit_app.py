@@ -417,7 +417,7 @@ def render_start_page():
             st.rerun()
 
     st.divider()
-    st.caption("📷 Images from [Unsplash](https://unsplash.com) | 🌤️ Weather data from [Open-Meteo](https://open-meteo.com) | ✈️ Flight data from [Amadeus](https://amadeus.com)")
+    st.caption("📷 Images from [Unsplash](https://unsplash.com) | 🌤️ Weather data from [Open-Meteo](https://open-meteo.com) | ✈️ Flight data from [Amadeus](https://developers.amadeus.com/)")
 
 # Page: Matching
 
