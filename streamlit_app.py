@@ -1,7 +1,6 @@
 """
 Travel Matching App
 Helps users find their perfect travel destination based on budget, preferences and weather.
-HSG Computer Science Project
 """
 
 import streamlit as st
@@ -13,8 +12,6 @@ from src.matching import (
     filter_by_budget,
     ranking_destinations,
     preference_vector,
-    calculate_feature_ranges,
-    get_travel_style_weights,
     find_similar_destinations,
     TRAVEL_STYLES,
 )
@@ -115,7 +112,7 @@ def get_smart_round_locations() -> List[Dict[str, Any]]:
         else:
             locations = random.sample(available, LOCATIONS_PER_ROUND)
     else:
-        # Later rounds: show better matches based on learned preferences
+        # Later rounds: use what we learned to show better matches
         ranked = ranking_destinations(
             available,
             st.session_state.chosen,
@@ -192,8 +189,24 @@ def get_score_label(score: float) -> str:
     return "Less Compatible"
 
 
+def get_temperature_display(dest: Dict[str, Any]) -> str:
+    """Get temperature string for a destination."""
+    forecast_temp = dest.get('forecast_temp')
+    current_temp = dest.get('current_temp')
+    rain_days = dest.get('rain_days', 0)
+    
+    if forecast_temp is not None:
+        temp_str = f"🌡️ {forecast_temp}°C"
+        if rain_days > 0:
+            temp_str += f" | 🌧️ {rain_days} rainy days"
+        return temp_str
+    elif current_temp is not None:
+        return f"🌡️ {current_temp}°C"
+    return None
+
+
 def render_destination_card(loc: Dict[str, Any], index: int):
-    """Display destination card with image and info."""
+    """Display destination card with image, info and temperature."""
     image_url = get_thumbnail_url(loc.get('city', ''), loc.get('country', ''))
     st.image(image_url, use_container_width=True)
     
@@ -203,20 +216,10 @@ def render_destination_card(loc: Dict[str, Any], index: int):
         st.markdown(f"### {loc['city']}")
         st.caption(f"📍 {loc['country']}")
         
-        # Show weather - check both forecast and current temp
-        forecast_temp = loc.get('forecast_temp')
-        current_temp = loc.get('current_temp')
-        rain_days = loc.get('rain_days', 0)
-        weather_score = loc.get('weather_score')
-        
-        if forecast_temp is not None:
-            st.caption(f"🌡️ {forecast_temp}°C expected")
-            if rain_days > 0:
-                st.caption(f"🌧️ {rain_days} rainy days")
-        elif current_temp is not None:
-            st.caption(f"🌡️ {current_temp}°C currently")
-        elif weather_score is not None:
-            st.caption(f"🌡️ Weather score: {int(weather_score)}%")
+        # Show temperature
+        temp_display = get_temperature_display(loc)
+        if temp_display:
+            st.caption(temp_display)
     
     with col2:
         flight = loc.get('flight_price')
@@ -275,7 +278,7 @@ def render_start_page():
     date_col1, date_col2 = st.columns(2)
     
     with date_col1:
-        default_start = datetime.now() + timedelta(days=14)
+        default_start = datetime.now() + timedelta(days=7)
         travel_date_start = st.date_input(
             "Departure",
             value=default_start,
@@ -298,10 +301,12 @@ def render_start_page():
     
     # Check forecast availability
     days_until = (travel_date_start - datetime.now().date()).days
-    if 0 <= days_until <= 16:
-        st.success("✅ Weather forecast available!")
-    elif days_until > 16:
-        st.warning(f"⚠️ Trip is {days_until} days away - using current weather")
+    can_use_forecast = 0 <= days_until <= 16
+    
+    if can_use_forecast:
+        st.success(f"✅ Weather forecast available!  (Trip in {days_until} days)")
+    else:
+        st.warning(f"⚠️ Trip is {days_until} days away - using current weather as estimate")
     
     st.divider()
     
@@ -346,19 +351,18 @@ def render_start_page():
     use_weather = st.checkbox(
         "Include weather in recommendations",
         value=st.session_state.get("use_weather", True),
-        help="Uses Open-Meteo API"
+        help="Uses Open-Meteo API for real weather data"
     )
     st.session_state.use_weather = use_weather
     
     if use_weather:
         temp_col1, temp_col2 = st.columns(2)
         with temp_col1:
-            min_temp = st.slider("Min °C", min_value=-10, max_value=30, 
-                                value=st.session_state.temp_preference[0])
+            min_temp = st.slider("Min °C", min_value=-10, max_value=30, value=st.session_state.temp_preference[0])
         with temp_col2:
-            max_temp = st.slider("Max °C", min_value=10, max_value=45, 
-                                value=st.session_state.temp_preference[1])
+            max_temp = st.slider("Max °C", min_value=10, max_value=45, value=st.session_state.temp_preference[1])
         st.session_state.temp_preference = (min_temp, max_temp)
+        st.caption(f"Looking for destinations with {min_temp}°C to {max_temp}°C")
     
     st.divider()
     
@@ -375,25 +379,23 @@ def render_start_page():
                 matches = matches[:MAX_DESTINATIONS]
             
             # Add weather data
-            days_until = (travel_date_start - datetime.now().date()).days
-            can_use_forecast = 0 <= days_until <= 16
-            
             if use_weather:
                 start_str = travel_date_start.strftime("%Y-%m-%d")
                 end_str = travel_date_end.strftime("%Y-%m-%d")
                 
                 if can_use_forecast:
-                    matches = enrich_destinations_with_forecast(
-                        matches, st.session_state.temp_preference, 
-                        start_str, end_str, show_progress=True
-                    )
                     st.session_state.use_forecast = True
+                    matches = enrich_destinations_with_forecast(matches, st.session_state.temp_preference, start_str, end_str, show_progress=True)
                 else:
-                    matches = enrich_destinations_with_weather(
-                        matches, st.session_state.temp_preference, 
-                        show_progress=True
-                    )
                     st.session_state.use_forecast = False
+                    matches = enrich_destinations_with_weather(matches, st.session_state.temp_preference, show_progress=True)
+                
+                # Check how many got weather data
+                with_temp = sum(1 for m in matches if m.get('forecast_temp') or m.get('current_temp'))
+                if with_temp > 0:
+                    st.success(f"🌡️ Weather data loaded for {with_temp}/{len(matches)} destinations")
+            else:
+                st.session_state.use_forecast = False
             
             # Save to session
             st.session_state.budget_matches = matches
@@ -420,11 +422,14 @@ def render_matching_page():
     current_style = st.session_state.get("travel_style", "balanced")
     num_travelers = st.session_state.get("num_travelers", 1)
     travel_date = st.session_state.get("travel_date_start")
+    use_forecast = st.session_state.get("use_forecast", False)
     
     if current_style in TRAVEL_STYLES:
         info = f"Style: {TRAVEL_STYLES[current_style]['name']} | 👥 {num_travelers}"
         if travel_date:
             info += f" | 📅 {travel_date.strftime('%b %d, %Y')}"
+        if use_forecast:
+            info += " | 🌤️ Forecast"
         st.caption(info)
     
     current_display_round = st.session_state.round + 1
@@ -516,13 +521,19 @@ def render_results_page():
     hero_url = get_hero_image_url(best.get('city', ''), best.get('country', ''))
     st.image(hero_url, use_container_width=True)
     
-    # 2. Winner info
+    # 2. Winner info with temperature
     score = best.get('combined_score', 0)
     color = get_score_color(score)
     label = get_score_label(score)
     
     st.success(f"### 🏆 {best['city']}, {best['country']}")
     st.markdown(f"**{color} Score: {score}%** - {label}")
+    
+    # Show temperature for winner
+    temp_display = get_temperature_display(best)
+    if temp_display:
+        st.write(temp_display)
+    
     st.write("Based on your choices, this is your ideal destination!")
     
     if travel_style in TRAVEL_STYLES:
@@ -563,7 +574,7 @@ def render_results_page():
     
     st.divider()
     
-    # 4. Similar destinations (ML-powered)
+    # 4. Similar destinations with temperature
     st.subheader("✨ You Might Also Like")
     st.caption("Destinations with similar characteristics")
     
@@ -584,7 +595,13 @@ def render_results_page():
                 st.image(get_thumbnail_url(city, country), use_container_width=True)
             with info_col:
                 st.write(f"**{city}, {country}**")
-                st.caption(f"🔗 {sim_score}% similar to {best['city']}")
+                
+                # Show similarity and temperature
+                caption_text = f"🔗 {sim_score}% similar to {best['city']}"
+                temp_display = get_temperature_display(dest)
+                if temp_display:
+                    caption_text += f" | {temp_display}"
+                st.caption(caption_text)
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -606,7 +623,9 @@ def render_results_page():
     st.caption("Based on your selections during matching")
     dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Based on Your Preferences")
     if dest_map:
-        st.plotly_chart(dest_map, use_container_width=True)    
+        st.plotly_chart(dest_map, use_container_width=True)
+        st.caption("🥇 Gold = Best match")
+    
     st.divider()
     
     # 6. Charts
@@ -655,6 +674,7 @@ def render_results_page():
     if st.button("🔄 Start Over", type="primary", use_container_width=True):
         reset_session_state()
         st.rerun()
+
 
 # Main
 

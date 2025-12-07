@@ -8,25 +8,32 @@ import requests
 import streamlit as st
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
-TIMEOUT = 5
+TIMEOUT = 10  # Increased timeout
 
 
 def get_weather(lat: float, lon: float) -> Dict[str, Any]:
     """Fetch current weather for a location."""
     try:
         resp = requests.get(API_URL, params={
-            "latitude": lat, "longitude": lon, "current_weather": True
+            "latitude": lat, 
+            "longitude": lon, 
+            "current_weather": True
         }, timeout=TIMEOUT)
         
         if resp.status_code == 200:
-            data = resp.json().get("current_weather", {})
-            return {
-                "temperature": data.get("temperature"),
-                "windspeed": data.get("windspeed"),
-                "success": True
-            }
-    except requests.RequestException:
-        pass
+            data = resp.json()
+            current = data.get("current_weather", {})
+            temp = current.get("temperature")
+            
+            if temp is not None:
+                return {
+                    "temperature": temp,
+                    "windspeed": current.get("windspeed"),
+                    "success": True
+                }
+    except requests.RequestException as e:
+        # Log error for debugging
+        print(f"Weather API error: {e}")
     
     return {"success": False}
 
@@ -35,13 +42,17 @@ def get_forecast(lat: float, lon: float, start: str, end: str) -> Dict[str, Any]
     """Fetch weather forecast for date range."""
     try:
         resp = requests.get(API_URL, params={
-            "latitude": lat, "longitude": lon,
+            "latitude": lat, 
+            "longitude": lon,
             "daily": ["temperature_2m_max", "temperature_2m_min", "precipitation_sum"],
-            "timezone": "auto", "start_date": start, "end_date": end
+            "timezone": "auto", 
+            "start_date": start, 
+            "end_date": end
         }, timeout=TIMEOUT)
         
         if resp.status_code == 200:
-            daily = resp.json().get("daily", {})
+            data = resp.json()
+            daily = data.get("daily", {})
             temps_max = daily.get("temperature_2m_max", [])
             temps_min = daily.get("temperature_2m_min", [])
             precip = daily.get("precipitation_sum", [])
@@ -58,8 +69,8 @@ def get_forecast(lat: float, lon: float, start: str, end: str) -> Dict[str, Any]
                     "total_days": len(temps_max),
                     "success": True
                 }
-    except requests.RequestException:
-        pass
+    except requests.RequestException as e:
+        print(f"Forecast API error: {e}")
     
     return {"success": False}
 
@@ -69,6 +80,9 @@ def calc_weather_score(temp: float, preferred: Tuple[int, int]) -> float:
     Score 0-100 based on temperature match.
     100 if within range, decreases as temp moves away from preferred range.
     """
+    if temp is None:
+        return 50.0
+    
     min_pref, max_pref = preferred
     
     if min_pref <= temp <= max_pref:
@@ -87,7 +101,6 @@ def calc_weather_score(temp: float, preferred: Tuple[int, int]) -> float:
 
 def enrich_destinations_with_weather(destinations: List[Dict], preferred: Tuple[int, int], show_progress: bool = True) -> List[Dict]:
     """Add current weather data to destinations."""
-    # Cache to avoid repeated API calls
     if "weather_cache" not in st.session_state:
         st.session_state["weather_cache"] = {}
     cache = st.session_state["weather_cache"]
@@ -96,6 +109,8 @@ def enrich_destinations_with_weather(destinations: List[Dict], preferred: Tuple[
         progress = st.progress(0, text="Loading weather...")
     
     enriched = []
+    success_count = 0
+    
     for i, dest in enumerate(destinations):
         d = dest.copy()
         dest_id = dest.get("id")
@@ -103,20 +118,28 @@ def enrich_destinations_with_weather(destinations: List[Dict], preferred: Tuple[
         if dest_id in cache:
             d['weather_score'] = cache[dest_id]['score']
             d['current_temp'] = cache[dest_id].get('temp')
+            if d['current_temp'] is not None:
+                success_count += 1
         else:
-            lat, lon = dest.get('latitude'), dest.get('longitude')
-            if lat and lon:
+            lat = dest.get('latitude')
+            lon = dest.get('longitude')
+            
+            if lat is not None and lon is not None:
                 weather = get_weather(lat, lon)
+                
                 if weather.get("success"):
-                    temp = weather.get('temperature', 20)
+                    temp = weather.get('temperature')
                     score = calc_weather_score(temp, preferred)
                     d['weather_score'] = score
                     d['current_temp'] = temp
                     cache[dest_id] = {'score': score, 'temp': temp}
+                    success_count += 1
                 else:
                     d['weather_score'] = 50.0
+                    d['current_temp'] = None
             else:
                 d['weather_score'] = 50.0
+                d['current_temp'] = None
         
         enriched.append(d)
         
@@ -125,6 +148,8 @@ def enrich_destinations_with_weather(destinations: List[Dict], preferred: Tuple[
     
     if show_progress:
         progress.empty()
+        if success_count < len(destinations):
+            st.caption(f"☁️ Weather loaded for {success_count}/{len(destinations)} destinations")
     
     return enriched
 
@@ -140,6 +165,8 @@ def enrich_destinations_with_forecast(destinations: List[Dict], preferred: Tuple
         progress = st.progress(0, text="Loading forecasts...")
     
     enriched = []
+    success_count = 0
+    
     for i, dest in enumerate(destinations):
         d = dest.copy()
         dest_id = dest.get("id")
@@ -149,10 +176,15 @@ def enrich_destinations_with_forecast(destinations: List[Dict], preferred: Tuple
             d['weather_score'] = cached['score']
             d['forecast_temp'] = cached.get('avg_temp')
             d['rain_days'] = cached.get('rain_days', 0)
+            if d['forecast_temp'] is not None:
+                success_count += 1
         else:
-            lat, lon = dest.get('latitude'), dest.get('longitude')
-            if lat and lon:
+            lat = dest.get('latitude')
+            lon = dest.get('longitude')
+            
+            if lat is not None and lon is not None:
                 forecast = get_forecast(lat, lon, start, end)
+                
                 if forecast.get("success"):
                     avg_temp = forecast.get('avg_temp', 20)
                     temp_score = calc_weather_score(avg_temp, preferred)
@@ -172,10 +204,15 @@ def enrich_destinations_with_forecast(destinations: List[Dict], preferred: Tuple
                         'avg_temp': avg_temp,
                         'rain_days': rain_days
                     }
+                    success_count += 1
                 else:
                     d['weather_score'] = 50.0
+                    d['forecast_temp'] = None
+                    d['rain_days'] = 0
             else:
                 d['weather_score'] = 50.0
+                d['forecast_temp'] = None
+                d['rain_days'] = 0
         
         enriched.append(d)
         
@@ -184,5 +221,7 @@ def enrich_destinations_with_forecast(destinations: List[Dict], preferred: Tuple
     
     if show_progress:
         progress.empty()
+        if success_count < len(destinations):
+            st.caption(f"🌤️ Forecast loaded for {success_count}/{len(destinations)} destinations")
     
     return enriched
