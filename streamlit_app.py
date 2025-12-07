@@ -1080,7 +1080,7 @@ def render_results_page():
                 
                 if encoded:
                     st.session_state.show_share_modal = True
-                    st.session_state.share_url = f"{APP_URL}/? share={encoded}"
+                    st.session_state.share_url = f"{APP_URL}/?share={encoded}"
                     st.rerun()
         
         # === SHARE MODAL ===
@@ -1092,11 +1092,7 @@ def render_results_page():
             
             st.success("✅ Share link created!")
             st.code(share_url, language=None)
-            
-            share_text = f"🌍 My Travel Match: {best['city']}, {best['country']} ({best.get('combined_score', 0)}% match)!  Find your perfect destination too!"
-            
-            st.text_area("📝 Share text:", value=share_text, height=80)
-            
+                                    
             st.caption("💡 Copy the link above and share it with friends!")
             
             if st.button("✕ Close", key="close_share"):
