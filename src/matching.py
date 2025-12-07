@@ -2,19 +2,23 @@
 Matching Module - Core Recommendation Engine
 
 This module implements the matching algorithm that learns user preferences
-from their choices and calculates compatibility scores for all destinations. 
+from their choices and calculates compatibility scores for all destinations.
 
 The algorithm uses:
 1. Preference learning from user selections
 2. Weighted feature similarity scoring
 3. Travel style adjustments
 4. Weather integration (optional)
+5. KNN-based similar destination finder (ML)
 
 Part of Requirement #5: Machine Learning Implementation
 """
 
 import random
 from typing import List, Dict, Any, Optional
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import MinMaxScaler
 from src.data import get_destinations_by_budget, get_all_destinations
 
 # =============================================================================
@@ -318,7 +322,7 @@ def get_travel_style_weights(style: str) -> Dict[str, float]:
 
 def normalize_value(value: float, min_val: float, max_val: float) -> float:
     """
-    Normalizes a value to the range 0-1. 
+    Normalizes a value to the range 0-1.
     
     Args:
         value: The value to normalize
@@ -368,7 +372,7 @@ def preference_vector(chosen: List[Dict[str, Any]]) -> Dict[str, float]:
     Calculates the user's preference vector from their choices.
     
     This is the core of the learning algorithm: it computes the average
-    value for each feature across all destinations chosen by the user. 
+    value for each feature across all destinations chosen by the user.
     
     Args:
         chosen: List of destinations chosen by the user
@@ -621,8 +625,71 @@ def get_match_breakdown(
 
 
 # =============================================================================
-# SIMILAR DESTINATIONS
+# ML-POWERED SIMILAR DESTINATIONS (KNN)
 # =============================================================================
+
+# Features used for KNN similarity calculation
+KNN_FEATURES = [
+    "beach", "culture", "nature", "food", "nightlife",
+    "adventure", "safety", "romance", "family", "crowds",
+    "english_level"
+]
+
+# Global KNN model cache
+_knn_model: Optional[NearestNeighbors] = None
+_knn_scaler: Optional[MinMaxScaler] = None
+_knn_destinations: List[Dict[str, Any]] = []
+
+
+def _extract_feature_matrix(destinations: List[Dict[str, Any]]) -> np.ndarray:
+    """
+    Extracts feature matrix from destinations for KNN.
+    
+    Args:
+        destinations: List of destination dictionaries
+        
+    Returns:
+        NumPy array of shape (n_destinations, n_features)
+    """
+    matrix = []
+    for dest in destinations:
+        row = []
+        for feature in KNN_FEATURES:
+            value = dest.get(feature, 3.0)  # Default to middle value
+            if value is None:
+                value = 3.0
+            row.append(float(value))
+        matrix.append(row)
+    return np.array(matrix)
+
+
+def _fit_knn_model(destinations: List[Dict[str, Any]]) -> None:
+    """
+    Fits the KNN model with destination data.
+    
+    Args:
+        destinations: List of all destinations to index
+    """
+    global _knn_model, _knn_scaler, _knn_destinations
+    
+    if not destinations:
+        return
+    
+    _knn_destinations = destinations
+    
+    # Extract and normalize features
+    raw_features = _extract_feature_matrix(destinations)
+    _knn_scaler = MinMaxScaler()
+    normalized_features = _knn_scaler.fit_transform(raw_features)
+    
+    # Fit KNN model with cosine similarity
+    _knn_model = NearestNeighbors(
+        n_neighbors=min(10, len(destinations)),
+        metric='cosine',
+        algorithm='brute'
+    )
+    _knn_model.fit(normalized_features)
+
 
 def find_similar_destinations(
     target: Dict[str, Any],
@@ -630,16 +697,16 @@ def find_similar_destinations(
     num_similar: int = 3
 ) -> List[Dict[str, Any]]:
     """
-    Finds destinations similar to the target based on feature profiles.
+    Finds destinations similar to the target using KNN (Machine Learning).
     
-    This function compares the target destination's features with all other
-    destinations and returns the most similar ones.  Useful for suggesting
-    alternatives to the user's top match.
+    This function uses K-Nearest Neighbors with cosine similarity to find
+    destinations with similar feature profiles. This is more mathematically
+    rigorous than simple feature-by-feature comparison.
     
-    Algorithm:
-    1. Compare each feature value between target and candidate
-    2. Calculate similarity as 1 - (normalized difference)
-    3. Average across all features
+    Algorithm (KNN with Cosine Similarity):
+    1. Normalize all feature values using MinMaxScaler
+    2. Use cosine distance to measure similarity in feature space
+    3. Find K nearest neighbors to the target
     4. Return top N most similar destinations
     
     Args:
@@ -656,44 +723,55 @@ def find_similar_destinations(
         >>> for dest in similar:
         ...     print(f"{dest['city']}: {dest['similarity_score']}% similar")
     """
-    features = [
-        "beach", "culture", "nature", "food", "nightlife",
-        "adventure", "safety", "romance", "family", "crowds"
-    ]
+    global _knn_model, _knn_scaler, _knn_destinations
     
-    similarities = []
+    if not all_destinations or not target:
+        return []
     
-    for dest in all_destinations:
+    # Refit model if destinations changed
+    if len(_knn_destinations) != len(all_destinations) or _knn_model is None:
+        _fit_knn_model(all_destinations)
+    
+    if _knn_model is None or _knn_scaler is None:
+        return []
+    
+    # Extract and normalize target features
+    target_features = []
+    for feature in KNN_FEATURES:
+        value = target.get(feature, 3.0)
+        if value is None:
+            value = 3.0
+        target_features.append(float(value))
+    
+    target_normalized = _knn_scaler.transform([target_features])
+    
+    # Find nearest neighbors (get extra in case we need to exclude self)
+    k = min(num_similar + 1, len(_knn_destinations))
+    distances, indices = _knn_model.kneighbors(target_normalized, n_neighbors=k)
+    
+    results = []
+    target_id = target.get('id')
+    
+    for idx, dist in zip(indices[0], distances[0]):
+        dest = _knn_destinations[idx]
+        
         # Skip the target destination itself
-        if dest.get('id') == target.get('id'):
+        if dest.get('id') == target_id:
             continue
         
-        # Calculate feature similarity
-        similarity_sum = 0
-        feature_count = 0
+        # Convert cosine distance to similarity percentage
+        # Cosine distance ranges from 0 (identical) to 2 (opposite)
+        similarity = (1 - dist / 2) * 100
         
-        for feature in features:
-            target_val = target.get(feature)
-            dest_val = dest.get(feature)
-            
-            if target_val is not None and dest_val is not None:
-                # Normalize difference (max diff is 4 on 1-5 scale)
-                diff = abs(target_val - dest_val) / 4.0
-                # Similarity = 1 - normalized difference
-                similarity_sum += (1 - diff)
-                feature_count += 1
+        results.append({
+            **dest,
+            'similarity_score': round(similarity, 1)
+        })
         
-        if feature_count > 0:
-            avg_similarity = (similarity_sum / feature_count) * 100
-            similarities.append({
-                **dest,
-                'similarity_score': round(avg_similarity, 1)
-            })
+        if len(results) >= num_similar:
+            break
     
-    # Sort by similarity score (highest first)
-    similarities.sort(key=lambda x: x['similarity_score'], reverse=True)
-    
-    return similarities[:num_similar]
+    return results
 
 
 # =============================================================================
@@ -813,4 +891,4 @@ def calculate_recommendation_confidence(
 
 def test_matching():
     """Test function to verify module is loaded correctly."""
-    return "Matching module loaded successfully"
+    return "Matching module loaded successfully with KNN support"
