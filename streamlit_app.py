@@ -25,13 +25,6 @@ from src.weather_matching import (
     enrich_destinations_with_forecast,
 )
 from src.insights import generate_preference_insights
-from src.session_manager import (
-    export_session,
-    get_export_filename,
-    create_share_data,
-    encode_share_data,
-    parse_shared_results,
-)
 from src.visuals import (
     create_preference_radar_chart,
     create_comparison_radar_chart,
@@ -53,8 +46,6 @@ from src.images import (
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-
-APP_URL = "https://computerscience91.streamlit.app"
 
 ROUNDS = 7
 MIN_BUDGET = 100
@@ -105,8 +96,6 @@ def initialize_session_state():
         "travel_date_start": None,
         "travel_date_end": None,
         "use_forecast": False,
-        "show_share_modal": False,
-        "share_url": "",
     }
     
     for key, value in defaults.items():
@@ -737,7 +726,6 @@ def render_matching_page():
 
 def render_results_page():
     """Renders the results page with recommendations."""
-    st.balloons()
     st.subheader("🎉 Your Perfect Destination!")
     
     travel_style = st.session_state.get("travel_style", "balanced")
@@ -915,7 +903,7 @@ def render_results_page():
                 st.plotly_chart(radar_fig, use_container_width=True)
             
             st.write("---")
-            st.write("**How does your top match compare?**")
+            st.write("**How does your top match compare? **")
             
             dest_values = {
                 k: best.get(k, 0)
@@ -1055,150 +1043,16 @@ def render_results_page():
         
         st.divider()
         
-        # === ACTION BUTTONS ===
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("🔄 Start Over", type="primary", use_container_width=True):
-                reset_session_state()
-                st.rerun()
-        
-        with col2:
-            json_data = export_session(ranked)
-            st.download_button(
-                label="📥 Download Results",
-                data=json_data,
-                file_name=get_export_filename(),
-                mime="application/json",
-                use_container_width=True,
-            )
-        
-        with col3:
-            if st.button("🔗 Share", use_container_width=True):
-                share_data = create_share_data(ranked)
-                encoded = encode_share_data(share_data)
-                
-                if encoded:
-                    st.session_state.show_share_modal = True
-                    st.session_state.share_url = f"{APP_URL}/?share={encoded}"
-                    st.rerun()
-        
-        # === SHARE MODAL ===
-        if st.session_state.get("show_share_modal", False):
-            st.divider()
-            st.subheader("🔗 Share Your Results")
-            
-            share_url = st.session_state.get("share_url", "")
-            
-            st.success("✅ Share link created!")
-            st.code(share_url, language=None)
-                                    
-            st.caption("💡 Copy the link above and share it with friends!")
-            
-            if st.button("✕ Close", key="close_share"):
-                st.session_state.show_share_modal = False
-                st.rerun()
+        # === ACTION BUTTON ===
+        if st.button("🔄 Start Over", type="primary", use_container_width=True):
+            reset_session_state()
+            st.rerun()
     
     else:
         st.error("❌ Unable to generate recommendations. Please try again.")
         if st.button("🔄 Start Over", type="primary"):
             reset_session_state()
             st.rerun()
-
-
-def render_shared_view_page():
-    """Renders the shared results view with images."""
-    shared_data = st.session_state.get("shared_results", {})
-    
-    if not shared_data:
-        st.error("❌ Invalid share link")
-        if st.button("🏠 Go to Start"):
-            st.session_state.state = "Start"
-            st.query_params.clear()
-            st.rerun()
-        return
-    
-    st.subheader("🔗 Shared Travel Recommendations")
-    st.info("Someone shared their travel match results with you!")
-    
-    # Show trip info
-    budget = shared_data.get("b", 0)
-    days = shared_data.get("t", 7)
-    travelers = shared_data.get("n", 1)
-    style = shared_data.get("st", "balanced")
-    
-    # Get full style name
-    if style in TRAVEL_STYLES:
-        style_name = TRAVEL_STYLES[style]["name"]
-    else:
-        style_name = style.title()
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("💰 Budget", f"CHF {budget}")
-    with col2:
-        st.metric("📅 Days", str(days))
-    with col3:
-        st.metric("👥 Travelers", str(travelers))
-    
-    st.markdown(f"**🎨 Travel Style:** {style_name}")
-    
-    st.divider()
-    
-    # Show results with images
-    results = shared_data.get("r", [])
-    
-    if results:
-        st.subheader("🏆 Top Recommendations")
-        
-        for i, dest in enumerate(results, 1):
-            city = dest.get("c", "Unknown")
-            country = dest.get("co", "")
-            score = int(dest.get("s", 0))
-            flight = int(dest.get("f", 0))
-            daily = int(dest.get("d", 0))
-            
-            total = (flight * travelers) + (daily * days * travelers)
-            color = get_score_color(score)
-            
-            # Medal emoji
-            if i == 1:
-                medal = "🥇"
-            elif i == 2:
-                medal = "🥈"
-            else:
-                medal = "🥉"
-            
-            # Image and info layout
-            img_col, info_col = st.columns([1, 2])
-            
-            with img_col:
-                image_url = get_thumbnail_url(city, country)
-                st.image(image_url, use_container_width=True)
-            
-            with info_col:
-                st.markdown(f"### {medal} {city}, {country}")
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Match Score", f"{color} {score}%")
-                with col2:
-                    st.metric("✈️ Flight", f"CHF {flight}")
-                with col3:
-                    st.metric("💰 Total", f"CHF {int(total)}")
-            
-            st.divider()
-    else:
-        st.warning("No recommendations found in shared link.")
-    
-    st.subheader("🚀 Find Your Own Match!")
-    st.write("Want to find your perfect travel destination?")
-    
-    if st.button("🎯 Start My Own Matching", type="primary", use_container_width=True):
-        st.session_state.state = "Start"
-        st.session_state.shared_results = None
-        st.query_params.clear()
-        st.rerun()
 
 
 # =============================================================================
@@ -1208,14 +1062,6 @@ def render_shared_view_page():
 def main():
     """Main application entry point."""
     initialize_session_state()
-    
-    # === CHECK FOR SHARED RESULTS ===
-    query_params = st.query_params
-    shared_data = parse_shared_results(dict(query_params))
-    
-    if shared_data and st.session_state.state == "Start":
-        st.session_state.shared_results = shared_data
-        st.session_state.state = "SharedView"
     
     st.title("✈️ Travel Matching")
     st.write("Find your perfect travel destination based on your preferences!")
@@ -1261,8 +1107,6 @@ def main():
         render_matching_page()
     elif st.session_state.state == "Results":
         render_results_page()
-    elif st.session_state.state == "SharedView":
-        render_shared_view_page()
 
 
 if __name__ == "__main__":
