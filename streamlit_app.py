@@ -491,7 +491,6 @@ def render_matching_page():
 
 def render_results_page():
     """Show final recommendations."""
-    st.balloons()
     st.subheader("🎉 Your Perfect Destination!")
     
     travel_style = st.session_state.get("travel_style", "balanced")
