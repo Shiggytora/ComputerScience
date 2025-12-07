@@ -27,7 +27,6 @@ from src.weather_matching import (
 from src.insights import generate_preference_insights
 from src.visuals import (
     create_preference_radar_chart,
-    create_comparison_radar_chart,
     create_score_breakdown_chart,
     create_top_destinations_chart,
     create_budget_comparison_chart,
@@ -242,7 +241,6 @@ def get_score_label(score: float) -> str:
 def render_destination_card(loc: Dict[str, Any], index: int):
     """Renders a destination card with image, flight price and weather info."""
     with st.container():
-        # Destination image
         image_url = get_thumbnail_url(loc.get('city', ''), loc.get('country', ''))
         st.image(image_url, use_container_width=True)
         
@@ -308,56 +306,6 @@ def render_confidence_display(confidence_data: Dict[str, Any]):
     st.progress(confidence / 100)
     st.caption(f"Score gap to #2: {gap} points")
     st.info(f"💡 {recommendation}")
-
-
-def render_score_breakdown(breakdown: Dict[str, Dict[str, Any]]):
-    """Renders detailed breakdown of match score by feature."""
-    feature_names = {
-        "safety": "🛡️ Safety",
-        "english_level": "🗣️ English Friendly",
-        "crowds": "👥 Crowd Level",
-        "beach": "🏖️ Beach",
-        "culture": "🏛️ Culture & History",
-        "nature": "🌿 Nature",
-        "food": "🍽️ Food & Cuisine",
-        "nightlife": "🌙 Nightlife",
-        "adventure": "🏔️ Adventure",
-        "romance": "💕 Romance",
-        "family": "👨‍👩‍👧‍👦 Family Friendly",
-        "avg_budget_per_day": "💰 Budget",
-    }
-    
-    if not breakdown:
-        st.write("No breakdown data available.")
-        return
-    
-    for feature, data in breakdown.items():
-        name = feature_names.get(feature, feature)
-        similarity = data['similarity']
-        color = get_score_color(similarity)
-        is_inverse = data.get('is_inverse', False)
-        
-        col1, col2, col3 = st.columns([2, 1, 1])
-        
-        with col1:
-            label = name
-            if is_inverse:
-                label += " ↓"
-            st.write(f"{label}")
-        
-        with col2:
-            st.write(f"{color} {similarity}%")
-        
-        with col3:
-            weight = abs(data['weight'])
-            if weight >= 2.5:
-                st.caption("⬆️ Very Important")
-            elif weight >= 1.5:
-                st.caption("⬆️ Important")
-            elif weight >= 1.0:
-                st.caption("➡️ Medium")
-            else:
-                st.caption("⬇️ Less Important")
 
 
 def render_insights(insights: Dict[str, Any]):
@@ -430,7 +378,6 @@ def render_similar_destinations(
         
         total = (flight * num_travelers) + (daily * trip_days * num_travelers)
         
-        # Image and info side by side
         img_col, info_col = st.columns([1, 2])
         
         with img_col:
@@ -524,7 +471,7 @@ def render_start_page():
     
     st.divider()
     
-    st.subheader("🎨 What's Your Travel Style?")
+    st.subheader("🎨 What's Your Travel Style? ")
     
     style_options = list(TRAVEL_STYLES.keys())
     selected_style = st.session_state.get("travel_style", "balanced")
@@ -887,9 +834,8 @@ def render_results_page():
         weights = get_travel_style_weights(travel_style)
         breakdown = get_match_breakdown(best, preference, feature_ranges, weights)
         
-        viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
+        viz_tab1, viz_tab2, viz_tab3 = st.tabs([
             "🎯 Preference Profile",
-            "📈 Score Breakdown",
             "🏆 Top Destinations",
             "💰 Budget & Weather"
         ])
@@ -901,61 +847,8 @@ def render_results_page():
             )
             if radar_fig:
                 st.plotly_chart(radar_fig, use_container_width=True)
-            
-            st.write("---")
-            st.write("**How does your top match compare? **")
-            
-            dest_values = {
-                k: best.get(k, 0)
-                for k in FEATURE_CONFIG.keys()
-                if best.get(k) is not None
-            }
-            comparison_fig = create_comparison_radar_chart(
-                preference,
-                dest_values,
-                destination_name=f"{best['city']}, {best['country']}",
-                title="Your Preferences vs Top Destination"
-            )
-            if comparison_fig:
-                st.plotly_chart(comparison_fig, use_container_width=True)
         
         with viz_tab2:
-            breakdown_fig = create_score_breakdown_chart(
-                breakdown,
-                title=f"Why {best['city']} Matches You"
-            )
-            if breakdown_fig:
-                st.plotly_chart(breakdown_fig, use_container_width=True)
-            
-            st.write("---")
-            gauge_col1, gauge_col2, gauge_col3 = st.columns(3)
-            
-            with gauge_col1:
-                overall_gauge = create_score_gauge(
-                    best.get('combined_score', 0),
-                    title="Overall Score"
-                )
-                if overall_gauge:
-                    st.plotly_chart(overall_gauge, use_container_width=True)
-            
-            with gauge_col2:
-                match_gauge = create_score_gauge(
-                    best.get('match_score', 0),
-                    title="Match Score"
-                )
-                if match_gauge:
-                    st.plotly_chart(match_gauge, use_container_width=True)
-            
-            with gauge_col3:
-                if use_weather:
-                    weather_gauge = create_score_gauge(
-                        best.get('weather_score', 50),
-                        title="Weather Score"
-                    )
-                    if weather_gauge:
-                        st.plotly_chart(weather_gauge, use_container_width=True)
-        
-        with viz_tab3:
             top_dest_fig = create_top_destinations_chart(
                 ranked,
                 num_destinations=7,
@@ -964,7 +857,7 @@ def render_results_page():
             if top_dest_fig:
                 st.plotly_chart(top_dest_fig, use_container_width=True)
         
-        with viz_tab4:
+        with viz_tab3:
             budget_fig = create_budget_comparison_chart(
                 ranked,
                 st.session_state.total_budget,
@@ -988,10 +881,6 @@ def render_results_page():
         
         st.divider()
         
-        with st.expander("📊 Match Score Details (Text)"):
-            st.write("How well this destination matches your preferences:")
-            render_score_breakdown(breakdown)
-        
         with st.expander("🔍 Your Travel Insights"):
             insights = generate_preference_insights(st.session_state.chosen)
             render_insights(insights)
@@ -999,9 +888,6 @@ def render_results_page():
         with st.expander("📋 Your Selections During Matching"):
             for i, chosen in enumerate(st.session_state.chosen, 1):
                 st.write(f"**Round {i}:** {chosen['city']}, {chosen['country']}")
-        
-        with st.expander("🔍 Full Destination Details"):
-            st.json(best)
         
         # === OTHER GREAT OPTIONS WITH IMAGES ===
         if len(ranked) > 1:
@@ -1065,40 +951,6 @@ def main():
     
     st.title("✈️ Travel Matching")
     st.write("Find your perfect travel destination based on your preferences!")
-    
-    with st.sidebar:
-        st.subheader("ℹ️ About")
-        st.write("This app helps you find your ideal travel destination through an interactive matching process.")
-        
-        st.divider()
-        
-        st.subheader("🔧 Session Info")
-        st.write(f"State: {st.session_state.state}")
-        st.write(f"Round: {st.session_state.round}/{ROUNDS}")
-        st.write(f"Selections: {len(st.session_state.chosen)}")
-        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
-        st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
-        
-        travel_date = st.session_state.get('travel_date_start')
-        if travel_date:
-            st.write(f"📅 Departure: {travel_date.strftime('%b %d, %Y')}")
-        
-        weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
-        st.write(f"Weather: {weather_status}")
-        
-        if st.session_state.get("use_forecast"):
-            st.caption("📡 Using weather forecast")
-        elif st.session_state.get("use_weather"):
-            st.caption("🌡️ Using current weather")
-
-        st.divider()
-
-        from src.images import get_cache_stats
-        stats = get_cache_stats()
-        st.caption(f"📷 {stats['total_cached']} images cached")
-        
-        st.caption("Travel Recommender v7.1")
-        st.caption("CS Group 9.1")
     
     # === PAGE ROUTING ===
     if st.session_state.state == "Start":
