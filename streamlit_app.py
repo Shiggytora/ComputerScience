@@ -189,7 +189,7 @@ def get_score_label(score: float) -> str:
     return "Less Compatible"
 
 
-def get_temperature_display(dest: Dict[str, Any]) -> str:
+def get_temperature_display(dest: Dict[str, Any], is_forecast: bool = True) -> str:
     """Get temperature string for a destination."""
     forecast_temp = dest.get('forecast_temp')
     current_temp = dest.get('current_temp')
@@ -204,7 +204,8 @@ def get_temperature_display(dest: Dict[str, Any]) -> str:
                 temp_str += f" | ☀️ No rain expected"
         return temp_str
     elif current_temp is not None:
-        return f"🌡️ {current_temp}°C"
+        # Indicate this is current, not forecast
+        return f"🌡️ {current_temp}°C (current)"
     return None
 
 
@@ -305,11 +306,11 @@ def render_start_page():
     # Check forecast availability
     days_until = (travel_date_start - datetime.now().date()).days
     can_use_forecast = 0 <= days_until <= 16
-    
+
     if can_use_forecast:
         st.success(f"✅ Weather forecast available!  (Trip in {days_until} days)")
     else:
-        st.warning(f"⚠️ Trip is {days_until} days away - using current weather as estimate")
+        st.warning(f"⚠️ Trip is {days_until} days away - weather shown is current, not forecast")
     
     st.divider()
     
