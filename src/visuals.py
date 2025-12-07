@@ -30,8 +30,7 @@ FEATURE_CONFIG = {
 }
 
 
-def create_preference_radar_chart(preferences: Dict[str, float],
-                                   title: str = "Your Preferences") -> go.Figure:
+def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Your Preferences") -> go.Figure:
     """Create radar chart showing user's preference profile."""
     if not preferences:
         return None

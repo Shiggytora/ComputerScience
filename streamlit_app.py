@@ -203,12 +203,20 @@ def render_destination_card(loc: Dict[str, Any], index: int):
         st.markdown(f"### {loc['city']}")
         st.caption(f"📍 {loc['country']}")
         
-        if loc.get('forecast_temp') is not None:
-            st.caption(f"🌡️ Forecast: {loc['forecast_temp']}°C")
-            if loc.get('rain_days', 0) > 0:
-                st.caption(f"🌧️ {loc['rain_days']} rainy days")
-        elif loc.get('current_temp') is not None:
-            st.caption(f"🌡️ Now: {loc['current_temp']}°C")
+        # Show weather - check both forecast and current temp
+        forecast_temp = loc.get('forecast_temp')
+        current_temp = loc.get('current_temp')
+        rain_days = loc.get('rain_days', 0)
+        weather_score = loc.get('weather_score')
+        
+        if forecast_temp is not None:
+            st.caption(f"🌡️ {forecast_temp}°C expected")
+            if rain_days > 0:
+                st.caption(f"🌧️ {rain_days} rainy days")
+        elif current_temp is not None:
+            st.caption(f"🌡️ {current_temp}°C currently")
+        elif weather_score is not None:
+            st.caption(f"🌡️ Weather score: {int(weather_score)}%")
     
     with col2:
         flight = loc.get('flight_price')
@@ -526,9 +534,9 @@ def render_results_page():
     
     st.divider()
     
-    # Similar destinations using KNN
-    st.subheader("🤖 Similar Destinations")
-    st.caption("Found using K-Nearest Neighbors algorithm")
+    # Similar destinations (ML-powered) - USER FRIENDLY NAME
+    st.subheader("✨ You Might Also Like")
+    st.caption("Destinations with similar characteristics")
     
     similar = find_similar_destinations(best, ranked, num_similar=3)
     
@@ -547,7 +555,7 @@ def render_results_page():
                 st.image(get_thumbnail_url(city, country), use_container_width=True)
             with info_col:
                 st.write(f"**{city}, {country}**")
-                st.caption(f"🤖 {sim_score}% similar to {best['city']}")
+                st.caption(f"🔗 {sim_score}% similar to {best['city']}")
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -560,15 +568,18 @@ def render_results_page():
                     st.write(f"💰 CHF {int(total)}")
                     st.caption("Total")
     else:
-        st.info("Not enough data for similar destinations.")
+        st.info("Not enough data for suggestions.")
     
     st.divider()
     
-    # Map
-    st.subheader("🗺️ Top Destinations")
-    dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Matches")
+    # Map - CLEARER TITLE
+    st.subheader("🗺️ Your Top Matches")
+    st.caption("Based on your selections during matching")
+    dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Based on Your Preferences")
     if dest_map:
         st.plotly_chart(dest_map, use_container_width=True)
+        st.caption("🥇 Gold = Best match")
+    
     st.divider()
     
     # Cost breakdown
@@ -612,7 +623,8 @@ def render_results_page():
             st.plotly_chart(radar, use_container_width=True)
     
     with tab2:
-        bar = create_top_destinations_chart(ranked, num_destinations=10, title="Top 10 Destinations")
+        # CLEARER TITLE
+        bar = create_top_destinations_chart(ranked, num_destinations=10, title="Top 10 Based on Your Preferences")
         if bar:
             st.plotly_chart(bar, use_container_width=True)
     
@@ -626,7 +638,7 @@ def render_results_page():
     
     with tab4:
         if use_weather:
-            weather_chart = create_weather_score_chart(ranked, num_destinations=5, title="Weather Scores")
+            weather_chart = create_weather_score_chart(ranked, num_destinations=5, title="Weather Compatibility")
             if weather_chart:
                 st.plotly_chart(weather_chart, use_container_width=True)
         else:
@@ -643,7 +655,6 @@ def render_results_page():
     if st.button("🔄 Start Over", type="primary", use_container_width=True):
         reset_session_state()
         st.rerun()
-
 
 # Main
 
