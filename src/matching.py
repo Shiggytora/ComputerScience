@@ -1,15 +1,32 @@
 """
 Matching Module - Core Recommendation Engine
+
+This module implements the matching algorithm that learns user preferences
+from their choices and calculates compatibility scores for all destinations.
+
+The algorithm uses:
+1. Preference learning from user selections
+2. Weighted feature similarity scoring
+3. Travel style adjustments
+4. Weather integration (optional)
+5. KNN-based similar destination finder (Machine Learning)
+
+Part of Requirement #5: Machine Learning Implementation
 """
 
 import random
 from typing import List, Dict, Any, Optional
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import MinMaxScaler
 from src.data import get_destinations_by_budget, get_all_destinations
+
 
 # =============================================================================
 # FEATURE CONFIGURATION
 # =============================================================================
 
+# All numeric features used in the matching algorithm
 MATCHING_FEATURES = [
     "safety",
     "english_level",
@@ -24,8 +41,10 @@ MATCHING_FEATURES = [
     "family",
 ]
 
+# Features where lower values are sometimes preferred
 INVERTIBLE_FEATURES = ["crowds", "avg_budget_per_day"]
 
+# Default weights for balanced matching
 DEFAULT_WEIGHTS = {
     "safety": 2.0,
     "english_level": 1.0,
@@ -40,8 +59,10 @@ DEFAULT_WEIGHTS = {
     "family": 1.0,
 }
 
+# Aliases for backward compatibility
 NUMERIC_FEATURES = MATCHING_FEATURES
 FEATURE_WEIGHTS = DEFAULT_WEIGHTS
+
 
 # =============================================================================
 # TRAVEL STYLES
@@ -231,9 +252,27 @@ def filter_by_budget(
     trip_days: int, 
     num_travelers: int = 1
 ) -> List[Dict[str, Any]]:
-    """Filters destinations based on user's budget for all travelers."""
+    """
+    Filters destinations based on user's budget for all travelers.
+    
+    This function wraps the data module's budget filtering and provides
+    a fallback to all destinations if no matches are found.
+    
+    Args:
+        total_budget: Total trip budget in CHF for ALL travelers combined
+        trip_days: Number of days for the trip
+        num_travelers: Number of people traveling (default: 1)
+        
+    Returns:
+        List of matching destination dictionaries
+        
+    Example:
+        >>> matches = filter_by_budget(6000, 10, 2)
+        >>> # Returns destinations affordable for 2 people over 10 days
+    """
     budget_matches = get_destinations_by_budget(total_budget, trip_days, num_travelers)
     
+    # Fallback to all destinations if no budget matches
     if not budget_matches:
         return get_all_destinations()
     
@@ -245,7 +284,17 @@ def test_locations(
     id_used: List[int],
     x: int = 3
 ) -> List[Dict[str, Any]]:
-    """Selects random destinations for a matching round."""
+    """
+    Selects random destinations for a matching round.
+    
+    Args:
+        budget_matches: List of all matching destinations
+        id_used: List of destination IDs already shown
+        x: Number of destinations to return
+        
+    Returns:
+        List of x random destinations
+    """
     remaining = [d for d in budget_matches if d["id"] not in id_used]
     
     if len(remaining) <= x:
@@ -255,7 +304,15 @@ def test_locations(
 
 
 def get_travel_style_weights(style: str) -> Dict[str, float]:
-    """Returns the feature weights for a specific travel style."""
+    """
+    Returns the feature weights for a specific travel style.
+    
+    Args:
+        style: Travel style key (e.g., 'beach_relaxation', 'balanced')
+        
+    Returns:
+        Dictionary of feature weights for the selected style
+    """
     if style in TRAVEL_STYLES:
         return TRAVEL_STYLES[style]["weights"]
     return DEFAULT_WEIGHTS
@@ -266,16 +323,37 @@ def get_travel_style_weights(style: str) -> Dict[str, float]:
 # =============================================================================
 
 def normalize_value(value: float, min_val: float, max_val: float) -> float:
-    """Normalizes a value to the range 0-1."""
+    """
+    Normalizes a value to the range 0-1.
+    
+    Args:
+        value: The value to normalize
+        min_val: Minimum value in the dataset
+        max_val: Maximum value in the dataset
+        
+    Returns:
+        Normalized value between 0 and 1
+    """
     if max_val == min_val:
         return 0.5
     return (value - min_val) / (max_val - min_val)
 
 
 def calculate_feature_ranges(destinations: List[Dict[str, Any]]) -> Dict[str, tuple]:
-    """Calculates min/max ranges for each feature across all destinations."""
+    """
+    Calculates min/max ranges for each feature across all destinations.
+    
+    This is used to normalize feature values for fair comparison.
+    
+    Args:
+        destinations: List of destination dictionaries
+        
+    Returns:
+        Dictionary mapping feature names to (min, max) tuples
+    """
     ranges = {}
     
+    # Add budget to features for range calculation
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
     for feature in all_features:
@@ -288,13 +366,30 @@ def calculate_feature_ranges(destinations: List[Dict[str, Any]]) -> Dict[str, tu
         if values:
             ranges[feature] = (min(values), max(values))
         else:
-            ranges[feature] = (1, 5)
+            ranges[feature] = (1, 5)  # Default range for 1-5 scores
     
     return ranges
 
 
 def preference_vector(chosen: List[Dict[str, Any]]) -> Dict[str, float]:
-    """Calculates the user's preference vector from their choices."""
+    """
+    Calculates the user's preference vector from their choices.
+    
+    This is the core of the learning algorithm: it computes the average
+    value for each feature across all destinations chosen by the user.
+    This represents what the user "prefers" based on their selections.
+    
+    Args:
+        chosen: List of destinations chosen by the user
+        
+    Returns:
+        Dictionary mapping features to average preferred values
+        
+    Example:
+        >>> chosen = [dest1, dest2, dest3]  # User's selections
+        >>> prefs = preference_vector(chosen)
+        >>> print(prefs['beach'])  # Average beach score of chosen destinations
+    """
     if not chosen:
         return {}
     
@@ -320,7 +415,24 @@ def calculate_match_score(
     feature_ranges: Dict[str, tuple],
     weights: Optional[Dict[str, float]] = None
 ) -> float:
-    """Calculates match score between a destination and user preferences."""
+    """
+    Calculates match score between a destination and user preferences.
+    
+    Algorithm:
+    1. Normalize both destination and preference values to 0-1
+    2. Calculate similarity as 1 - |normalized_dest - normalized_pref|
+    3. Apply weights (negative weights invert the similarity)
+    4. Return weighted average as percentage (0-100)
+    
+    Args:
+        destination: Destination dictionary with features
+        preference: User's preference vector
+        feature_ranges: Min/max ranges for normalization
+        weights: Feature weights (from travel style)
+        
+    Returns:
+        Match score as percentage (0-100)
+    """
     if not preference:
         return 50.0
     
@@ -346,13 +458,16 @@ def calculate_match_score(
         
         min_val, max_val = feature_ranges.get(feature, (1, 5))
         
+        # Normalize values to 0-1 range
         norm_dest = normalize_value(dest_value, min_val, max_val)
         norm_pref = normalize_value(preference[feature], min_val, max_val)
         
+        # Calculate similarity (1 = identical, 0 = opposite)
         similarity = 1.0 - abs(norm_dest - norm_pref)
         
         abs_weight = abs(weight)
         
+        # Negative weight = inverse preference (e.g., prefer LOW crowds)
         if weight < 0:
             similarity = 1.0 - similarity
         
@@ -371,10 +486,21 @@ def calculate_combined_score(
     match_score: float,
     weather_weight: float = 0.2
 ) -> float:
-    """Combines match score with weather score for final ranking."""
+    """
+    Combines match score with weather score for final ranking.
+    
+    Args:
+        destination: Destination with optional weather_score field
+        match_score: Calculated match score
+        weather_weight: Weight for weather (0-1), default 0.2 = 20%
+        
+    Returns:
+        Combined score as percentage (0-100)
+    """
     weather_score = destination.get('weather_score', 50.0)
     if weather_score is None:
         weather_score = 50.0
+    
     combined = (match_score * (1 - weather_weight)) + (weather_score * weather_weight)
     return round(combined, 1)
 
@@ -390,7 +516,30 @@ def ranking_destinations(
     use_weather: bool = True,
     weather_weight: float = 0.2
 ) -> List[Dict[str, Any]]:
-    """Ranks all destinations based on user preferences."""
+    """
+    Ranks all destinations based on user preferences.
+    
+    This is the main recommendation function that:
+    1. Learns user preferences from their choices
+    2. Applies travel style weights
+    3. Calculates match scores for all destinations
+    4. Optionally incorporates weather data
+    5. Returns sorted list with best matches first
+    
+    Args:
+        budget_matches: All budget-matching destinations
+        chosen: Destinations chosen by user in matching rounds
+        travel_style: Selected travel style for weight adjustment
+        use_weather: Whether to include weather in scoring
+        weather_weight: How much weather affects final score (0-1)
+        
+    Returns:
+        Sorted list of destinations with scores added:
+        - match_score: Score based on preference matching
+        - weather_score: Score based on weather compatibility
+        - combined_score: Final weighted score
+    """
+    # Learn user preferences from their choices
     preference = preference_vector(chosen)
     feature_ranges = calculate_feature_ranges(budget_matches)
     weights = get_travel_style_weights(travel_style)
@@ -400,16 +549,19 @@ def ranking_destinations(
     for dest in budget_matches:
         dest_copy = dest.copy()
         
+        # Calculate match score based on learned preferences
         match_score = calculate_match_score(
             dest_copy, preference, feature_ranges, weights
         )
         dest_copy['match_score'] = match_score
         
+        # Get weather score (already calculated during enrichment)
         weather_score = dest_copy.get('weather_score', 50.0)
         if weather_score is None:
             weather_score = 50.0
         dest_copy['weather_score'] = round(weather_score, 1)
         
+        # Calculate combined score
         if use_weather:
             dest_copy['combined_score'] = calculate_combined_score(
                 dest_copy, match_score, weather_weight
@@ -419,9 +571,184 @@ def ranking_destinations(
         
         scored_destinations.append(dest_copy)
     
+    # Sort by combined score (higher = better match)
     scored_destinations.sort(key=lambda d: d['combined_score'], reverse=True)
     
     return scored_destinations
+
+
+# =============================================================================
+# ML-POWERED SIMILAR DESTINATIONS (KNN)
+# Part of Requirement #5: Machine Learning Implementation
+#
+# This section implements K-Nearest Neighbors (KNN) using scikit-learn
+# to find destinations with similar feature profiles.
+# =============================================================================
+
+# Features used for KNN similarity calculation
+KNN_FEATURES = [
+    "beach", "culture", "nature", "food", "nightlife",
+    "adventure", "safety", "romance", "family", "crowds",
+    "english_level"
+]
+
+# Global KNN model cache (singleton pattern for efficiency)
+_knn_model: Optional[NearestNeighbors] = None
+_knn_scaler: Optional[MinMaxScaler] = None
+_knn_destinations: List[Dict[str, Any]] = []
+
+
+def _extract_feature_matrix(destinations: List[Dict[str, Any]]) -> np.ndarray:
+    """
+    Extracts feature matrix from destinations for KNN algorithm.
+    
+    Converts destination dictionaries into a numerical matrix suitable
+    for machine learning algorithms.
+    
+    Args:
+        destinations: List of destination dictionaries
+        
+    Returns:
+        NumPy array of shape (n_destinations, n_features)
+    """
+    matrix = []
+    for dest in destinations:
+        row = []
+        for feature in KNN_FEATURES:
+            value = dest.get(feature, 3.0)  # Default to middle value
+            if value is None:
+                value = 3.0
+            row.append(float(value))
+        matrix.append(row)
+    return np.array(matrix)
+
+
+def _fit_knn_model(destinations: List[Dict[str, Any]]) -> None:
+    """
+    Fits the KNN model with destination data.
+    
+    Uses scikit-learn's NearestNeighbors with cosine similarity
+    to build an index for finding similar destinations.
+    
+    Args:
+        destinations: List of all destinations to index
+    """
+    global _knn_model, _knn_scaler, _knn_destinations
+    
+    if not destinations:
+        return
+    
+    _knn_destinations = destinations
+    
+    # Extract features into a matrix
+    raw_features = _extract_feature_matrix(destinations)
+    
+    # Normalize features using MinMaxScaler (sklearn)
+    # This ensures all features are on the same scale (0-1)
+    _knn_scaler = MinMaxScaler()
+    normalized_features = _knn_scaler.fit_transform(raw_features)
+    
+    # Fit KNN model with cosine similarity metric
+    # Cosine similarity measures the angle between feature vectors,
+    # making it ideal for comparing destination profiles
+    _knn_model = NearestNeighbors(
+        n_neighbors=min(10, len(destinations)),
+        metric='cosine',
+        algorithm='brute'
+    )
+    _knn_model.fit(normalized_features)
+
+
+def find_similar_destinations(
+    target: Dict[str, Any],
+    all_destinations: List[Dict[str, Any]],
+    num_similar: int = 3
+) -> List[Dict[str, Any]]:
+    """
+    Finds destinations similar to the target using K-Nearest Neighbors.
+    
+    This is the main Machine Learning component of the application.
+    It uses scikit-learn's KNN algorithm with cosine similarity to find
+    destinations with similar feature profiles to the user's top match.
+    
+    Algorithm (KNN with Cosine Similarity):
+    1. Extract numerical features from all destinations
+    2. Normalize features using MinMaxScaler (sklearn.preprocessing)
+    3. Use cosine distance to measure similarity in feature space
+    4. Find K nearest neighbors using NearestNeighbors (sklearn.neighbors)
+    5. Convert distances to similarity percentages
+    6. Return top N most similar destinations
+    
+    Machine Learning Components Used:
+    - sklearn.neighbors.NearestNeighbors: KNN implementation
+    - sklearn.preprocessing.MinMaxScaler: Feature normalization
+    - numpy: Numerical array operations
+    
+    Args:
+        target: The destination to find similar ones for
+        all_destinations: All available destinations to compare against
+        num_similar: Number of similar destinations to return (default: 3)
+        
+    Returns:
+        List of similar destinations sorted by similarity score,
+        each with an added 'similarity_score' field (0-100%)
+        
+    Example:
+        >>> similar = find_similar_destinations(best_match, all_destinations, 3)
+        >>> for dest in similar:
+        ...     print(f"{dest['city']}: {dest['similarity_score']}% similar")
+    """
+    global _knn_model, _knn_scaler, _knn_destinations
+    
+    if not all_destinations or not target:
+        return []
+    
+    # Refit model if destinations changed or model not initialized
+    if len(_knn_destinations) != len(all_destinations) or _knn_model is None:
+        _fit_knn_model(all_destinations)
+    
+    if _knn_model is None or _knn_scaler is None:
+        return []
+    
+    # Extract and normalize target features
+    target_features = []
+    for feature in KNN_FEATURES:
+        value = target.get(feature, 3.0)
+        if value is None:
+            value = 3.0
+        target_features.append(float(value))
+    
+    # Transform target using the fitted scaler
+    target_normalized = _knn_scaler.transform([target_features])
+    
+    # Find nearest neighbors (get extra in case we need to exclude self)
+    k = min(num_similar + 1, len(_knn_destinations))
+    distances, indices = _knn_model.kneighbors(target_normalized, n_neighbors=k)
+    
+    results = []
+    target_id = target.get('id')
+    
+    for idx, dist in zip(indices[0], distances[0]):
+        dest = _knn_destinations[idx]
+        
+        # Skip the target destination itself
+        if dest.get('id') == target_id:
+            continue
+        
+        # Convert cosine distance to similarity percentage
+        # Cosine distance ranges from 0 (identical) to 2 (opposite)
+        # We convert to 0-100% scale where 100% = identical
+        similarity = (1 - dist / 2) * 100
+        
+        results.append({
+            **dest,
+            'similarity_score': round(similarity, 1)
+        })
+        
+        if len(results) >= num_similar:
+            break
+    
+    return results
 
 
 # =============================================================================
@@ -430,4 +757,4 @@ def ranking_destinations(
 
 def test_matching():
     """Test function to verify module is loaded correctly."""
-    return "Matching module loaded successfully"
+    return "Matching module loaded successfully with KNN (Machine Learning) support"
