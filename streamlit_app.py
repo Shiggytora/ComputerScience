@@ -663,13 +663,16 @@ def render_results_page():
     
         # Show top 3 preferences
         if preference:
-            sorted_prefs = sorted(preference.items(), key=lambda x: x[1], reverse=True)
+            filtered_prefs = {k: v for k, v in preference.items() if v <= 5}
+            sorted_prefs = sorted(filtered_prefs.items(), key=lambda x: x[1], reverse=True)
             top_3 = sorted_prefs[:3]
         
             # Display top 3 preferences with emojis
             st.markdown("**🎯 Your Top 3 Preferences:**")
+            emoji_map = {
+                "beach": "🏖️", "culture": "🏛️", "nature": "🌿", "food": "🍽️", "nightlife": "🎉", "adventure": "🏔️", "romance": "💕", "family": "👨‍👩‍👧‍👦", "safety": "🛡️", "english": "🗣️", "crowds": "👥"}
             for i, (pref, value) in enumerate(top_3, 1):
-                emoji = {"beach": "🏖️", "culture": "🏛️", "nature": "🌿", "food": "🍽️", "nightlife": "🎉", "adventure": "🏔️", "romance": "💕", "family": "👨‍👩‍👧‍👦", "safety": "🛡️", "english": "🗣️", "crowds": "👥"}.get(pref, "•")
+                emoji = emoji_map.get(pref, "•")
                 st.write(f"{i}.{emoji} **{pref.capitalize()}**: {value:.1f}/5")
 
     # Tab 2: Top 10 destinations bar chart
