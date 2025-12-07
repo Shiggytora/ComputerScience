@@ -1192,7 +1192,7 @@ def render_shared_view_page():
         st.warning("No recommendations found in shared link.")
     
     st.subheader("🚀 Find Your Own Match!")
-    st.write("Want to find your perfect travel destination? ")
+    st.write("Want to find your perfect travel destination?")
     
     if st.button("🎯 Start My Own Matching", type="primary", use_container_width=True):
         st.session_state.state = "Start"
