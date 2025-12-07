@@ -13,9 +13,9 @@ from src.matching import (
     test_locations,
     ranking_destinations,
     preference_vector,
-    TRAVEL_STYLES,
-    find_similar_destinations,
-)
+    find_similar_destinations,  # ← Jetzt verfügbar!
+    TRAVEL_STYLES,)
+
 from src.weather_matching import (
     enrich_destinations_with_weather,
     enrich_destinations_with_forecast,
