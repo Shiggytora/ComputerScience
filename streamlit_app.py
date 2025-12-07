@@ -861,40 +861,6 @@ def main():
     st.title("✈️ Travel Matching")
     st.write("Find your perfect travel destination based on your preferences!")
     
-    with st.sidebar:
-        st.subheader("ℹ️ About")
-        st.write("This app helps you find your ideal travel destination through an interactive matching process.")
-        
-        st.divider()
-        
-        st.subheader("🔧 Session Info")
-        st.write(f"State: {st.session_state.state}")
-        st.write(f"Round: {st.session_state.round}/{ROUNDS}")
-        st.write(f"Selections: {len(st.session_state.chosen)}")
-        st.write(f"👥 Travelers: {st.session_state.get('num_travelers', 1)}")
-        st.write(f"Style: {st.session_state.get('travel_style', 'balanced')}")
-        
-        travel_date = st.session_state.get('travel_date_start')
-        if travel_date:
-            st.write(f"📅 Departure: {travel_date.strftime('%b %d, %Y')}")
-        
-        weather_status = "On" if st.session_state.get("use_weather", True) else "Off"
-        st.write(f"Weather: {weather_status}")
-        
-        if st.session_state.get("use_forecast"):
-            st.caption("📡 Using weather forecast")
-        elif st.session_state.get("use_weather"):
-            st.caption("🌡️ Using current weather")
-
-        st.divider()
-
-        from src.images import get_cache_stats
-        stats = get_cache_stats()
-        st.caption(f"📷 {stats['total_cached']} images cached")
-        
-        st.caption("Travel Recommender v7.1")
-        st.caption("CS Group 9.1")
-    
     # === PAGE ROUTING ===
     if st.session_state.state == "Start":
         render_start_page()
