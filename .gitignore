@@ -1,25 +1,15 @@
-# Python Bytecode, bzw. Automatische Python Cache-Dateien
+# Python specific ignores
 __pycache__/
 *.pyc
 *.pyo
 
-# Virtual Environments / Lokale Python-Installationen
+# Virtual Environments, if used
 .venv/
 venv/
 
-# Environment Variables (IMPORTANT!!) / Amadeus Keys
+# Environment Variable we use for storage of API key and secrets
 .env
 
-# VS Code / PyCharm Settings / Lokale IDE-Dateien für VS Code
+# Local VS Code and IDE settings 
 .vscode/
 .idea/
-
-# Mac / Windows System Files 
-.DS_Store
-Thumbs.db
-
-# Models (optional, wenn groß)
-*.pkl
-
-# Streamlit cache / Temporäre Streamlitdateien
-.streamlit/

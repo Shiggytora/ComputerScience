@@ -11,6 +11,7 @@ from typing import List, Dict, Any
 DB_PATH = Path(__file__).parent.parent / "data" / "travel.db"
 
 
+# Database connection
 def get_connection():
     """Create database connection."""
     if not DB_PATH.exists():
@@ -18,6 +19,7 @@ def get_connection():
     return sqlite3.connect(DB_PATH)
 
 
+# Load all destinations from database
 def get_all_destinations() -> List[Dict[str, Any]]:
     """Load all destinations from database."""
     conn = get_connection()
@@ -29,14 +31,12 @@ def get_all_destinations() -> List[Dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
+# Filter destinations by budget and calculate total trip cost
 def get_destinations_by_budget(total_budget: float, trip_days: int, num_travelers: int = 1) -> List[Dict]:
-    """
-    Filter destinations that fit within budget.
-    Calculates total cost: flights + daily expenses for all travelers.
-    """
     all_dests = get_all_destinations()
     matches = []
     
+    # Calculate total trip cost for each destination
     for dest in all_dests:
         flight = dest.get('flight_price') or 0
         daily = dest.get('avg_budget_per_day') or 0

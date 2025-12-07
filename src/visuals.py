@@ -1,6 +1,12 @@
 """
 Visualization functions using Plotly.
 Creates charts for the results page.
+Strucure as following:
+    - Radar chart for user preferences
+    - Horizontal bar chart for top destinations
+    - Stacked bar chart for budget comparison
+    - Bar chart for weather scores
+    - World map for destination locations
 """
 
 import plotly.graph_objects as go
@@ -14,7 +20,7 @@ COLORS = {
     "success": "#95E1A3",
 }
 
-# Feature display config
+# Feature display config with emojis
 FEATURE_CONFIG = {
     "safety": {"name": "Safety", "emoji": "🛡️"},
     "english_level": {"name": "English", "emoji": "🗣️"},
@@ -26,15 +32,15 @@ FEATURE_CONFIG = {
     "nightlife": {"name": "Nightlife", "emoji": "🌙"},
     "adventure": {"name": "Adventure", "emoji": "🏔️"},
     "romance": {"name": "Romance", "emoji": "💕"},
-    "family": {"name": "Family", "emoji": "👨‍👩‍👧‍👦"},
-}
+    "family": {"name": "Family", "emoji": "👨‍👩‍👧‍👦"}}
 
 
+# Radar Chart for User Preferences
 def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Your Preferences") -> go.Figure:
-    """Create radar chart showing user's preference profile."""
     if not preferences:
         return None
     
+    # Filter preferences to known features
     filtered = {k: v for k, v in preferences.items() if k in FEATURE_CONFIG}
     if not filtered:
         return None
@@ -42,6 +48,7 @@ def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Y
     categories = []
     values = []
     
+    # Prepare data for radar chart
     for feature, value in filtered.items():
         cfg = FEATURE_CONFIG.get(feature, {})
         label = f"{cfg.get('emoji', '')} {cfg.get('name', feature)}"
@@ -52,6 +59,7 @@ def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Y
     categories.append(categories[0])
     values.append(values[0])
     
+    # Create radar chart
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
         r=values,
@@ -61,6 +69,7 @@ def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Y
         line=dict(color=COLORS["secondary"], width=2),
     ))
     
+    # Update layout
     fig.update_layout(
         polar=dict(
             radialaxis=dict(visible=True, range=[0, 5]),
@@ -74,14 +83,13 @@ def create_preference_radar_chart(preferences: Dict[str, float], title: str = "Y
     return fig
 
 
-def create_top_destinations_chart(destinations: List[Dict], num_destinations: int = 5,
-                                   title: str = "Top Destinations") -> go.Figure:
-    """Horizontal bar chart of top matches."""
+# Horizontal Bar Chart for Top Destinations
+def create_top_destinations_chart(destinations: List[Dict], num_destinations: int = 5, title: str = "Top Destinations") -> go.Figure:
     if not destinations:
         return None
     
+    # Get top destinations
     top = destinations[:num_destinations]
-    
     names = [f"{d.get('city', '? ')}, {d.get('country', '')}" for d in top]
     scores = [d.get('combined_score', 0) for d in top]
     
@@ -95,6 +103,7 @@ def create_top_destinations_chart(destinations: List[Dict], num_destinations: in
         else:
             colors.append("#74B9FF")
     
+    # Create horizontal bar chart
     fig = go.Figure()
     fig.add_trace(go.Bar(
         y=names,
@@ -105,6 +114,7 @@ def create_top_destinations_chart(destinations: List[Dict], num_destinations: in
         textposition='inside',
     ))
     
+    # Update layout
     fig.update_layout(
         title=dict(text=title, x=0.5, xanchor='center'),
         xaxis=dict(title="Match Score (%)", range=[0, 100]),
@@ -116,20 +126,18 @@ def create_top_destinations_chart(destinations: List[Dict], num_destinations: in
     return fig
 
 
-def create_budget_comparison_chart(destinations: List[Dict], user_budget: float,
-                                    num_travelers: int = 1, trip_days: int = 7,
-                                    num_destinations: int = 5,
-                                    title: str = "Budget Comparison") -> go.Figure:
-    """Stacked bar chart comparing costs."""
+# Stacked Bar Chart for Budget Comparison
+def create_budget_comparison_chart(destinations: List[Dict], user_budget: float, num_travelers: int = 1, trip_days: int = 7, num_destinations: int = 5, title: str = "Budget Comparison") -> go.Figure:
     if not destinations:
         return None
     
+    # Get top destinations
     top = destinations[:num_destinations]
-    
     names = [d.get('city', '?') for d in top]
     flights = [(d.get('flight_price') or 0) * num_travelers for d in top]
     stays = [(d.get('avg_budget_per_day') or 0) * trip_days * num_travelers for d in top]
     
+    # Create stacked bar chart
     fig = go.Figure()
     fig.add_trace(go.Bar(
         name='✈️ Flights',
@@ -137,6 +145,8 @@ def create_budget_comparison_chart(destinations: List[Dict], user_budget: float,
         y=flights,
         marker_color=COLORS["secondary"]
     ))
+
+    # Stay bars
     fig.add_trace(go.Bar(
         name='🏨 Stay',
         x=names,
@@ -152,6 +162,7 @@ def create_budget_comparison_chart(destinations: List[Dict], user_budget: float,
         annotation_text=f"Budget: CHF {user_budget:.0f}"
     )
     
+    # Update layout
     fig.update_layout(
         title=dict(text=title, x=0.5, xanchor='center'),
         barmode='stack',
@@ -162,14 +173,14 @@ def create_budget_comparison_chart(destinations: List[Dict], user_budget: float,
     return fig
 
 
-def create_weather_score_chart(destinations: List[Dict], num_destinations: int = 5,
-                                title: str = "Weather Compatibility") -> go.Figure:
+# Bar Chart for Weather Scores
+def create_weather_score_chart(destinations: List[Dict], num_destinations: int = 5, title: str = "Weather Compatibility") -> go.Figure:
     """Bar chart of weather scores."""
     if not destinations:
         return None
     
+    # Get top destinations
     top = destinations[:num_destinations]
-    
     names = [d.get('city', '? ') for d in top]
     scores = [d.get('weather_score', 50) or 50 for d in top]
     temps = [d.get('forecast_temp') or d.get('current_temp') for d in top]
@@ -184,6 +195,7 @@ def create_weather_score_chart(destinations: List[Dict], num_destinations: int =
         else:
             colors.append("#FF6B6B")
     
+    # Create bar chart
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=names,
@@ -193,6 +205,7 @@ def create_weather_score_chart(destinations: List[Dict], num_destinations: int =
         textposition='outside',
     ))
     
+    # Update layout
     fig.update_layout(
         title=dict(text=title, x=0.5, xanchor='center'),
         yaxis=dict(range=[0, 110]),
@@ -203,18 +216,20 @@ def create_weather_score_chart(destinations: List[Dict], num_destinations: int =
     return fig
 
 
-def create_destinations_map(destinations: List[Dict], highlight_best: bool = True,
-                             title: str = "Destinations") -> go.Figure:
-    """World map showing destinations."""
+# # World Map for Destination Locations
+def create_destinations_map(destinations: List[Dict], highlight_best: bool = True, title: str = "Destinations") -> go.Figure:
     if not destinations:
         return None
     
+    # Prepare data for map
     lats, lons, texts, colors = [], [], [], []
     
+    # Iterate through destinations
     for i, dest in enumerate(destinations):
         lat = dest.get('latitude')
         lon = dest.get('longitude')
         
+        # Skip if no coordinates
         if lat is None or lon is None:
             continue
         
@@ -222,6 +237,7 @@ def create_destinations_map(destinations: List[Dict], highlight_best: bool = Tru
         country = dest.get('country', '')
         score = dest.get('combined_score', 50)
         
+        # Collect data
         lats.append(lat)
         lons.append(lon)
         texts.append(f"<b>{city}, {country}</b><br>Score: {score:.1f}%")
@@ -239,9 +255,10 @@ def create_destinations_map(destinations: List[Dict], highlight_best: bool = Tru
     if not lats:
         return None
     
+    # Create map figure
     fig = go.Figure()
     
-    # Markers
+    # Destination points
     fig.add_trace(go.Scattergeo(
         lat=lats,
         lon=lons,
@@ -250,7 +267,7 @@ def create_destinations_map(destinations: List[Dict], highlight_best: bool = Tru
         marker=dict(size=20, color=colors, line=dict(width=1, color='white')),
     ))
     
-    # Rank labels
+    # Add ranking numbers for top 5
     for i in range(min(5, len(lats))):
         fig.add_trace(go.Scattergeo(
             lat=[lats[i]],
@@ -262,6 +279,7 @@ def create_destinations_map(destinations: List[Dict], highlight_best: bool = Tru
             showlegend=False,
         ))
     
+    # Update layout
     fig.update_layout(
         title=dict(text=title, x=0.5, xanchor='center'),
         geo=dict(

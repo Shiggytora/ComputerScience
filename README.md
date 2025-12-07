@@ -1,34 +1,41 @@
-How to install:
+# ✈️ Travel Matching App
 
-# clone the repository
-git clone https://github.com/Shiggytora/ComputerScience.git
+An interactive web app that helps you find your perfect travel destination - based on your budget, preferences, and weather.
 
-# navigate to the repository
-cd ComputerScience
+--------------------
 
-# create a virtuell environment
+## Installation
+
+### 1. Extract zip
+
+### 2. Create Virtual Environment
+
 python -m venv .venv
+.venv\Scripts\activate
 
-# install dependencies/libraries
+
+### 3. Install Dependencies
+
 pip install -r requirements.txt
+the api keys and secrets are also provided in the .env file
 
-# run streamlit/start the app
-streamlit run streamlit_app.py# ✈️ Travel Matching Recommender
 
-A machine learning-powered travel destination recommender built with Streamlit. 
+### 4. Run the App
 
-# Problem Statement
+streamlit run streamlit_app.py
 
-Choosing a travel destination can be overwhelming with hundreds of options available. This application solves this problem by:
-1. Learning user preferences through an interactive matching process
-2. Using machine learning to calculate compatibility scores
-3. Incorporating real-time weather data for better recommendations
+The app is also available at https://computerscience91.streamlit.app/
 
-# Features
+--------------------
 
-- **Interactive Matching**: 7-round process to learn your preferences
-- **7 Travel Styles**: Beach, City, Budget, Hidden Gem, Luxury, Adventure, Balanced
-- **Weather Integration**: Real-time weather data from Open-Meteo API
-- **ML-Powered Scoring**: Weighted similarity algorithm learns your preferences
-- **Detailed Insights**: Understand why destinations match your preferences
-- **Export Results**: Download your results as JSON
+## Credits
+
+- 📷 Images: [Unsplash](https://unsplash.com)
+- 🌤️ Weather: [Open-Meteo](https://open-meteo.com)
+- ✈️ Flight prices: [Amadeus](https://developers.amadeus.com)
+
+--------------------
+
+## Team
+
+Chiara, Jade, Jan, Morena and William as Group 9.1 in the Fundamentals and Methods of Computer Science for Business Studies course.

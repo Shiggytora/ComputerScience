@@ -1,20 +1,18 @@
 """
-Image handling using Unsplash API with local caching.
+Image handling using Unsplash API.
 """
 
 import os
-import json
 import requests
-from pathlib import Path
 
-# Try Streamlit secrets first, then .env
+# Try Streamlit secrets first, then .env (for accessing the Unsplash API)
 try:
     import streamlit as st
     UNSPLASH_ACCESS_KEY = st.secrets.get("UNSPLASH_ACCESS_KEY", None)
 except Exception:
     UNSPLASH_ACCESS_KEY = None
 
-# Fallback to .env for local dev
+# Fallback to .env for local dev if not found in Streamlit secrets
 if not UNSPLASH_ACCESS_KEY:
     from dotenv import load_dotenv
     load_dotenv()
@@ -22,52 +20,15 @@ if not UNSPLASH_ACCESS_KEY:
 
 UNSPLASH_API_URL = "https://api.unsplash.com/search/photos"
 
-# Cache config
-CACHE_DIR = Path("data/image_cache")
-CACHE_FILE = CACHE_DIR / "image_urls.json"
-
-# Fallback if API fails
+# Fallback image if API fails
 FALLBACK_IMAGE = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=400&fit=crop"
 
 
-def _load_cache() -> dict:
-    """Load cached image URLs from disk."""
-    try:
-        if CACHE_FILE.exists():
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-    except Exception:
-        pass
-    return {}
-
-
-def _save_cache(cache: dict) -> None:
-    """Save image URLs to disk cache."""
-    try:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with open(CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(cache, f, indent=2, ensure_ascii=False)
-    except Exception:
-        pass
-
-
-def _get_cache_key(city: str, country: str, size: str) -> str:
-    """Create unique cache key."""
-    return f"{city}|{country}|{size}".lower()
-
-
+# Main function to get city image URL
 def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> str:
     """
     Get Unsplash image URL for a destination.
-    Checks cache first, fetches from API if not cached.
     """
-    cache_key = _get_cache_key(city, country, size)
-    
-    # Check cache
-    cache = _load_cache()
-    if cache_key in cache:
-        return cache[cache_key]
-    
     # No API key = use fallback
     if not UNSPLASH_ACCESS_KEY:
         return FALLBACK_IMAGE
@@ -77,9 +38,10 @@ def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> s
     except ValueError:
         width, height = "800", "500"
     
-    # Search Unsplash
+    # Search on Unsplash
     query = f"{city} {country} travel landmark".strip()
     
+    # Make the API request
     try:
         response = requests.get(
             UNSPLASH_API_URL,
@@ -88,17 +50,12 @@ def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> s
             timeout=5
         )
         
+        # Check for successful response
         if response.status_code == 200:
             data = response.json()
             if data.get("results"):
                 raw_url = data["results"][0]["urls"]["raw"]
-                image_url = f"{raw_url}&w={width}&h={height}&fit=crop&q=80"
-                
-                # Cache it
-                cache[cache_key] = image_url
-                _save_cache(cache)
-                
-                return image_url
+                return f"{raw_url}&w={width}&h={height}&fit=crop&q=80"
         
         return FALLBACK_IMAGE
         
@@ -106,11 +63,12 @@ def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> s
         return FALLBACK_IMAGE
 
 
+# Function to get small image of city
 def get_thumbnail_url(city: str, country: str = "") -> str:
     """Get small thumbnail (800x500)."""
     return get_city_image_url(city, country, "800x500")
 
-
+# Function to get large image of city
 def get_hero_image_url(city: str, country: str = "") -> str:
     """Get large hero image (1600x900)."""
     return get_city_image_url(city, country, "1600x900")

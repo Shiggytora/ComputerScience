@@ -1,6 +1,6 @@
-streamlit
-numpy
-scikit-learn
-python-dotenv
-requests
-plotly
+streamlit # For building the front end of our web app
+numpy # For numerical computations
+scikit-learn # For machine learning algorithms
+python-dotenv # For loading environment variables from a .env file which include API keys and secrets
+requests # For making HTTP requests to external APIs, we used it for the OPEN Meteo API
+plotly # For creating interactive visualizations and plots

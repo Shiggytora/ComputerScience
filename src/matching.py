@@ -1,6 +1,12 @@
 """
 Matching algorithm for travel recommendations.
 Learns user preferences and uses KNN for finding similar destinations.
+Structure as following:
+    1. Filter destinations by budget
+    2. Learn user preferences from chosen destinations
+    3. Calculate match scores for all budget-matching destinations
+    4. Rank destinations by match score (and weather score if enabled)
+    5. Use KNN to find similar destinations when requested
 """
 
 from typing import List, Dict, Optional
@@ -9,7 +15,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
 from src.data import get_destinations_by_budget, get_all_destinations
 
-# Features used for matching destinations to preferences
+# Travel styles we use for weighting features
 MATCHING_FEATURES = [
     "safety", "english_level", "crowds", "beach", "culture",
     "nature", "food", "nightlife", "adventure", "romance", "family",
@@ -22,128 +28,95 @@ DEFAULT_WEIGHTS = {
     "adventure": 1.0, "romance": 1.0, "family": 1.0,
 }
 
-# Different travel styles with custom feature weights
-# Positive weight = prefer higher values
-# Negative weight = prefer lower values (e.g. crowds)
+# Different travel styles with custom feature weights, positive = prefer high, negative = prefer low
 TRAVEL_STYLES = {
     "beach_relaxation": {
         "name": "🏖️ Beach & Relaxation",
         "description": "Sun, sand, and relaxation",
         "weights": {
-            "beach": 3.0, "safety": 2.0, "crowds": -1.5, "nature": 1.5,
-            "romance": 1.0, "food": 1.0, "nightlife": 0.5, "culture": 0.5,
-            "adventure": 0.5, "english_level": 1.0, "family": 1.0,
-        }
-    },
+            "beach": 3.0, "safety": 2.0, "crowds": -1.5, "nature": 1.5, "romance": 1.0, "food": 1.0, "nightlife": 0.5, "culture": 0.5, "adventure": 0.5, "english_level": 1.0, "family": 1.0,}},
+
     "culture_history": {
         "name": "🏛️ Culture & History",
         "description": "Museums, architecture, and heritage",
         "weights": {
-            "culture": 3.0, "food": 2.0, "safety": 1.5, "english_level": 1.5,
-            "nature": 1.0, "romance": 1.0, "crowds": -0.5, "beach": 0.5,
-            "nightlife": 0.5, "adventure": 0.5, "family": 1.0,
-        }
-    },
+            "culture": 3.0, "food": 2.0, "safety": 1.5, "english_level": 1.5, "nature": 1.0, "romance": 1.0, "crowds": -0.5, "beach": 0.5, "nightlife": 0.5, "adventure": 0.5, "family": 1.0,}},
+
     "adventure_nature": {
         "name": "🏔️ Adventure & Nature",
         "description": "Hiking, wildlife, and outdoor activities",
         "weights": {
-            "adventure": 3.0, "nature": 3.0, "crowds": -2.0, "safety": 2.0,
-            "culture": 0.5, "beach": 0.5, "food": 1.0, "english_level": 1.0,
-            "nightlife": 0.0, "romance": 1.0, "family": 1.0,
-        }
-    },
+            "adventure": 3.0, "nature": 3.0, "crowds": -2.0, "safety": 2.0, "culture": 0.5, "beach": 0.5, "food": 1.0, "english_level": 1.0, "nightlife": 0.0, "romance": 1.0, "family": 1.0,}},
+
     "foodie": {
         "name": "🍽️ Food & Culinary",
         "description": "Local cuisine and gastronomic experiences",
         "weights": {
-            "food": 3.0, "culture": 2.0, "safety": 1.5, "english_level": 1.0,
-            "nightlife": 1.0, "crowds": -0.5, "beach": 0.5, "nature": 1.0,
-            "adventure": 0.5, "romance": 1.5, "family": 1.0,
-        }
-    },
+            "food": 3.0, "culture": 2.0, "safety": 1.5, "english_level": 1.0, "nightlife": 1.0, "crowds": -0.5, "beach": 0.5, "nature": 1.0, "adventure": 0.5, "romance": 1.5, "family": 1.0,}},
+
     "party_nightlife": {
         "name": "🎉 Party & Nightlife",
         "description": "Clubs, bars, and vibrant nightlife",
         "weights": {
-            "nightlife": 3.0, "beach": 1.5, "safety": 1.5, "english_level": 2.0,
-            "food": 1.5, "crowds": 0.5, "culture": 0.5, "nature": 0.5,
-            "adventure": 1.0, "romance": 1.0, "family": -1.0,
-        }
-    },
+            "nightlife": 3.0, "beach": 1.5, "safety": 1.5, "english_level": 2.0, "food": 1.5, "crowds": 0.5, "culture": 0.5, "nature": 0.5, "adventure": 1.0, "romance": 1.0, "family": -1.0,}},
+
     "romantic_getaway": {
         "name": "💕 Romantic Getaway",
         "description": "Perfect for couples and honeymoons",
         "weights": {
-            "romance": 3.0, "safety": 2.5, "food": 2.0, "beach": 2.0,
-            "crowds": -2.0, "nature": 2.0, "culture": 1.5, "nightlife": 1.0,
-            "english_level": 1.0, "adventure": 1.0, "family": -1.0,
-        }
-    },
+            "romance": 3.0, "safety": 2.5, "food": 2.0, "beach": 2.0, "crowds": -2.0, "nature": 2.0, "culture": 1.5, "nightlife": 1.0, "english_level": 1.0, "adventure": 1.0, "family": -1.0,}},
+
     "family_vacation": {
         "name": "👨‍👩‍👧‍👦 Family Vacation",
         "description": "Safe and fun for the whole family",
         "weights": {
-            "family": 3.0, "safety": 3.0, "english_level": 2.0, "beach": 1.5,
-            "nature": 1.5, "culture": 1.0, "food": 1.0, "adventure": 1.0,
-            "nightlife": -1.5, "crowds": -0.5, "romance": 0.0,
-        }
-    },
+            "family": 3.0, "safety": 3.0, "english_level": 2.0, "beach": 1.5, "nature": 1.5, "culture": 1.0, "food": 1.0, "adventure": 1.0, "nightlife": -1.5, "crowds": -0.5, "romance": 0.0,}},
+
     "budget_backpacker": {
         "name": "💰 Budget Travel",
         "description": "Maximum experience, minimum cost",
         "weights": {
-            "avg_budget_per_day": -3.0, "safety": 2.0, "english_level": 1.5,
-            "culture": 1.5, "food": 1.5, "adventure": 1.5, "nature": 1.0,
-            "crowds": -0.5, "beach": 1.0, "nightlife": 1.0,
-            "romance": 0.5, "family": 0.5,
-        }
-    },
+            "avg_budget_per_day": -3.0, "safety": 2.0, "english_level": 1.5, "culture": 1.5, "food": 1.5, "adventure": 1.5, "nature": 1.0, "crowds": -0.5, "beach": 1.0, "nightlife": 1.0, "romance": 0.5, "family": 0.5,}},
+
     "hidden_gems": {
         "name": "🗺️ Hidden Gems",
         "description": "Off the beaten path destinations",
         "weights": {
-            "crowds": -3.0, "nature": 2.0, "culture": 1.5, "adventure": 1.5,
-            "safety": 1.5, "food": 1.0, "english_level": 0.5, "beach": 1.0,
-            "nightlife": 0.0, "romance": 1.5, "family": 1.0,
-        }
-    },
+            "crowds": -3.0, "nature": 2.0, "culture": 1.5, "adventure": 1.5, "safety": 1.5, "food": 1.0, "english_level": 0.5, "beach": 1.0, "nightlife": 0.0, "romance": 1.5, "family": 1.0,}},
+
     "balanced": {
         "name": "⚖️ Balanced",
         "description": "A bit of everything",
         "weights": {
-            "safety": 2.0, "culture": 1.5, "nature": 1.5, "food": 1.5,
-            "beach": 1.0, "english_level": 1.0, "adventure": 1.0,
-            "nightlife": 0.5, "romance": 1.0, "family": 1.0, "crowds": -0.5,
-        }
-    },
-}
+            "safety": 2.0, "culture": 1.5, "nature": 1.5, "food": 1.5, "beach": 1.0, "english_level": 1.0, "adventure": 1.0, "nightlife": 0.5, "romance": 1.0, "family": 1.0, "crowds": -0.5,}},}
 
 
+# Budget filtering
 def filter_by_budget(total_budget: float, trip_days: int, num_travelers: int = 1) -> List[Dict]:
-    """Get destinations that fit within budget."""
     matches = get_destinations_by_budget(total_budget, trip_days, num_travelers)
+
+    # If no matches, return all destinations to allow matching
     if not matches:
         return get_all_destinations()
     return matches
 
 
+# Travel style weights
 def get_travel_style_weights(style: str) -> Dict[str, float]:
-    """Get weights for a travel style."""
     if style in TRAVEL_STYLES:
         return TRAVEL_STYLES[style]["weights"]
     return DEFAULT_WEIGHTS
 
 
+# Match score calculation and ranking
 def normalize_value(value: float, min_val: float, max_val: float) -> float:
-    """Scale value to 0-1 range for comparison."""
     if max_val == min_val:
         return 0.5
     return (value - min_val) / (max_val - min_val)
 
 
+# Calculate feature ranges for normalization across all destinations
 def calculate_feature_ranges(destinations: List[Dict]) -> Dict[str, tuple]:
-    """Get min/max for each feature. Needed for normalization."""
     ranges = {}
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
@@ -157,17 +130,15 @@ def calculate_feature_ranges(destinations: List[Dict]) -> Dict[str, tuple]:
     return ranges
 
 
+# Learn user preferences from chosen destinations
 def preference_vector(chosen: List[Dict]) -> Dict[str, float]:
-    """
-    Learn user preferences from their choices.
-    Simply averages each feature across chosen destinations.
-    """
     if not chosen:
         return {}
     
     preference = {}
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
+    # Calculate average for each feature
     for feature in all_features:
         values = [d.get(feature) for d in chosen if d.get(feature) is not None]
         if values:
@@ -176,15 +147,12 @@ def preference_vector(chosen: List[Dict]) -> Dict[str, float]:
     return preference
 
 
-def calculate_match_score(destination: Dict, preference: Dict,
-                          feature_ranges: Dict, weights: Optional[Dict] = None) -> float:
-    """
-    Calculate how well a destination matches user preferences.
-    Returns score from 0-100.
-    """
+# Calculate match score between destination and user preferences (0-100 scale)
+def calculate_match_score(destination: Dict, preference: Dict, feature_ranges: Dict, weights: Optional[Dict] = None) -> float:
     if not preference:
         return 50.0
     
+    # Use default weights if none provided
     if weights is None:
         weights = DEFAULT_WEIGHTS
     
@@ -192,6 +160,7 @@ def calculate_match_score(destination: Dict, preference: Dict,
     total_weight = 0.0
     all_features = MATCHING_FEATURES + ["avg_budget_per_day"]
     
+    # Calculate weighted similarity for each feature
     for feature in all_features:
         if feature not in preference:
             continue
@@ -204,6 +173,7 @@ def calculate_match_score(destination: Dict, preference: Dict,
         if weight == 0:
             continue
         
+        # Get feature range for normalization
         min_val, max_val = feature_ranges.get(feature, (1, 5))
         
         # Normalize to 0-1
@@ -217,6 +187,7 @@ def calculate_match_score(destination: Dict, preference: Dict,
         if weight < 0:
             similarity = 1.0 - similarity
         
+        # Accumulate weighted similarity
         total_sim += similarity * abs(weight)
         total_weight += abs(weight)
     
@@ -226,27 +197,22 @@ def calculate_match_score(destination: Dict, preference: Dict,
     return round((total_sim / total_weight) * 100, 1)
 
 
-def calculate_combined_score(destination: Dict, match_score: float,
-                             weather_weight: float = 0.2) -> float:
-    """Combine match score with weather score."""
+# Combine match score with weather score
+def calculate_combined_score(destination: Dict, match_score: float, weather_weight: float = 0.2) -> float:
     weather = destination.get('weather_score', 50.0) or 50.0
     combined = (match_score * (1 - weather_weight)) + (weather * weather_weight)
     return round(combined, 1)
 
 
-def ranking_destinations(budget_matches: List[Dict], chosen: List[Dict],
-                         travel_style: str = "balanced", use_weather: bool = True,
-                         weather_weight: float = 0.2) -> List[Dict]:
-    """
-    Rank all destinations based on learned preferences.
-    Returns sorted list with best matches first.
-    """
+# Rank destinations based on match score and weather score
+def ranking_destinations(budget_matches: List[Dict], chosen: List[Dict], travel_style: str = "balanced", use_weather: bool = True, weather_weight: float = 0.2) -> List[Dict]:
     preference = preference_vector(chosen)
     feature_ranges = calculate_feature_ranges(budget_matches)
     weights = get_travel_style_weights(travel_style)
     
     scored = []
     
+    # Calculate scores for each destination
     for dest in budget_matches:
         d = dest.copy()
         
@@ -267,13 +233,9 @@ def ranking_destinations(budget_matches: List[Dict], chosen: List[Dict],
     return scored
 
 
-# KNN for finding similar destinations
-# Uses scikit-learn's NearestNeighbors with cosine similarity
-
+# KNN (K-Nearest Neighbors) for similar destinations
 KNN_FEATURES = [
-    "beach", "culture", "nature", "food", "nightlife",
-    "adventure", "safety", "romance", "family", "crowds", "english_level"
-]
+    "beach", "culture", "nature", "food", "nightlife", "adventure", "safety", "romance", "family", "crowds", "english_level"]
 
 # Cache for KNN model (avoid refitting every call)
 _knn_model = None
@@ -281,8 +243,8 @@ _knn_scaler = None
 _knn_destinations = []
 
 
+# Build numpy feature matrix for KNN
 def _build_feature_matrix(destinations: List[Dict]) -> np.ndarray:
-    """Convert destinations to numpy matrix for KNN."""
     matrix = []
     for dest in destinations:
         row = [float(dest.get(f, 3.0) or 3.0) for f in KNN_FEATURES]
@@ -290,6 +252,7 @@ def _build_feature_matrix(destinations: List[Dict]) -> np.ndarray:
     return np.array(matrix)
 
 
+# Fit KNN model
 def _fit_knn(destinations: List[Dict]):
     """Train KNN model on destinations."""
     global _knn_model, _knn_scaler, _knn_destinations
@@ -297,6 +260,7 @@ def _fit_knn(destinations: List[Dict]):
     if not destinations:
         return
     
+    # Build feature matrix
     _knn_destinations = destinations
     features = _build_feature_matrix(destinations)
     
@@ -313,14 +277,11 @@ def _fit_knn(destinations: List[Dict]):
     _knn_model.fit(normalized)
 
 
-def find_similar_destinations(target: Dict, all_destinations: List[Dict],
-                              num_similar: int = 3) -> List[Dict]:
-    """
-    Find similar destinations using KNN algorithm.
-    Uses scikit-learn NearestNeighbors with cosine similarity.
-    """
+# Find similar destinations using KNN algorithm. Uses scikit-learn NearestNeighbors with cosine similarity.
+def find_similar_destinations(target: Dict, all_destinations: List[Dict], num_similar: int = 3) -> List[Dict]:
     global _knn_model, _knn_scaler, _knn_destinations
     
+    # Validate inputs
     if not all_destinations or not target:
         return []
     
@@ -328,6 +289,7 @@ def find_similar_destinations(target: Dict, all_destinations: List[Dict],
     if len(_knn_destinations) != len(all_destinations) or _knn_model is None:
         _fit_knn(all_destinations)
     
+    # Ensure model is ready
     if _knn_model is None or _knn_scaler is None:
         return []
     
@@ -339,9 +301,11 @@ def find_similar_destinations(target: Dict, all_destinations: List[Dict],
     k = min(num_similar + 1, len(_knn_destinations))
     distances, indices = _knn_model.kneighbors(target_normalized, n_neighbors=k)
     
+    # Compile results
     results = []
     target_id = target.get('id')
     
+    # Process neighbors
     for idx, dist in zip(indices[0], distances[0]):
         dest = _knn_destinations[idx]
         
