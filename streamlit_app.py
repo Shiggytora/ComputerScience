@@ -482,6 +482,7 @@ def render_matching_page():
 
 def render_results_page():
     """Show final recommendations."""
+    st.balloons()
     st.subheader("🎉 Your Perfect Destination!")
     
     travel_style = st.session_state.get("travel_style", "balanced")
@@ -511,11 +512,11 @@ def render_results_page():
     
     best = ranked[0]
     
-    # Hero image
+    # 1. Hero image
     hero_url = get_hero_image_url(best.get('city', ''), best.get('country', ''))
     st.image(hero_url, use_container_width=True)
     
-    # Winner info
+    # 2. Winner info
     score = best.get('combined_score', 0)
     color = get_score_color(score)
     label = get_score_label(score)
@@ -534,7 +535,35 @@ def render_results_page():
     
     st.divider()
     
-    # Similar destinations (ML-powered) - USER FRIENDLY NAME
+    # 3. Cost breakdown
+    st.subheader("💰 Cost Breakdown")
+    
+    flight_price = best.get('flight_price') or 0
+    daily_budget = best.get('avg_budget_per_day') or 0
+    flight_total = flight_price * num_travelers
+    accommodation_total = daily_budget * trip_days * num_travelers
+    total_cost = flight_total + accommodation_total
+    
+    if num_travelers > 1:
+        st.info(f"💡 Costs for **{num_travelers} travelers** over **{trip_days} days**")
+    
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("✈️ Flights", f"CHF {int(flight_total)}")
+    with c2:
+        st.metric("🏨 Stay", f"CHF {int(accommodation_total)}")
+    with c3:
+        st.metric("💵 Total", f"CHF {int(total_cost)}")
+    with c4:
+        remaining = st.session_state.total_budget - total_cost
+        if remaining >= 0:
+            st.metric("💚 Left", f"CHF {int(remaining)}")
+        else:
+            st.metric("🔴 Over", f"CHF {int(abs(remaining))}")
+    
+    st.divider()
+    
+    # 4. Similar destinations (ML-powered)
     st.subheader("✨ You Might Also Like")
     st.caption("Destinations with similar characteristics")
     
@@ -572,44 +601,17 @@ def render_results_page():
     
     st.divider()
     
-    # Map - CLEARER TITLE
+    # 5. Map
     st.subheader("🗺️ Your Top Matches")
     st.caption("Based on your selections during matching")
     dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Based on Your Preferences")
     if dest_map:
         st.plotly_chart(dest_map, use_container_width=True)
-
-    st.divider()
-    
-    # Cost breakdown
-    st.subheader("💰 Cost Breakdown")
-    
-    flight_price = best.get('flight_price') or 0
-    daily_budget = best.get('avg_budget_per_day') or 0
-    flight_total = flight_price * num_travelers
-    accommodation_total = daily_budget * trip_days * num_travelers
-    total_cost = flight_total + accommodation_total
-    
-    if num_travelers > 1:
-        st.info(f"💡 Costs for **{num_travelers} travelers** over **{trip_days} days**")
-    
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("✈️ Flights", f"CHF {int(flight_total)}")
-    with c2:
-        st.metric("🏨 Stay", f"CHF {int(accommodation_total)}")
-    with c3:
-        st.metric("💵 Total", f"CHF {int(total_cost)}")
-    with c4:
-        remaining = st.session_state.total_budget - total_cost
-        if remaining >= 0:
-            st.metric("💚 Left", f"CHF {int(remaining)}")
-        else:
-            st.metric("🔴 Over", f"CHF {int(abs(remaining))}")
+        st.caption("🥇 Gold = Best match")
     
     st.divider()
     
-    # Charts
+    # 6. Charts
     st.subheader("📊 Insights")
     
     preference = preference_vector(st.session_state.chosen)
@@ -622,7 +624,6 @@ def render_results_page():
             st.plotly_chart(radar, use_container_width=True)
     
     with tab2:
-        # CLEARER TITLE
         bar = create_top_destinations_chart(ranked, num_destinations=10, title="Top 10 Based on Your Preferences")
         if bar:
             st.plotly_chart(bar, use_container_width=True)
@@ -645,12 +646,14 @@ def render_results_page():
     
     st.divider()
     
+    # 7. User selections
     with st.expander("📋 Your Selections"):
         for i, chosen in enumerate(st.session_state.chosen, 1):
             st.write(f"Round {i}: {chosen['city']}, {chosen['country']}")
     
     st.divider()
     
+    # 8. Start over
     if st.button("🔄 Start Over", type="primary", use_container_width=True):
         reset_session_state()
         st.rerun()
