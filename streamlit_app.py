@@ -569,8 +569,7 @@ def render_results_page():
     dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Matches")
     if dest_map:
         st.plotly_chart(dest_map, use_container_width=True)
-        st.caption("🥇 Gold = Best match")
-    
+            
     st.divider()
     
     # Cost breakdown
