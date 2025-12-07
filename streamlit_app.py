@@ -14,6 +14,7 @@ from src.matching import (
     ranking_destinations,
     preference_vector,
     TRAVEL_STYLES,
+    find_similar_destinations,
 )
 from src.weather_matching import (
     enrich_destinations_with_weather,
@@ -537,6 +538,7 @@ def render_matching_page():
 
 def render_results_page():
     """Renders the results page with recommendations."""
+    st.balloons()
     st.subheader("🎉 Your Perfect Destination!")
     
     travel_style = st.session_state.get("travel_style", "balanced")
@@ -618,6 +620,47 @@ def render_results_page():
                     with col3:
                         st.write(f"💰 CHF {int(total)}")
                         st.caption("Total")
+        
+        # === SIMILAR DESTINATIONS (ML-POWERED) ===
+        st.divider()
+        st.subheader("🤖 Similar Destinations (AI-Powered)")
+        st.caption("Found using Machine Learning (K-Nearest Neighbors with scikit-learn)")
+        
+        similar = find_similar_destinations(best, ranked, num_similar=3)
+        
+        if similar:
+            for dest in similar:
+                similarity = dest.get('similarity_score', 0)
+                city = dest.get('city', 'Unknown')
+                country = dest.get('country', '')
+                flight = dest.get('flight_price') or 0
+                daily = dest.get('avg_budget_per_day') or 0
+                combined = dest.get('combined_score', 0)
+                
+                total = (flight * num_travelers) + (daily * trip_days * num_travelers)
+                
+                img_col, info_col = st.columns([1, 3])
+                
+                with img_col:
+                    image_url = get_thumbnail_url(city, country)
+                    st.image(image_url, use_container_width=True)
+                
+                with info_col:
+                    st.write(f"**{city}, {country}**")
+                    st.caption(f"🤖 {similarity}% similar to {best['city']}")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.write(f"{get_score_color(combined)} {combined}%")
+                        st.caption("Match")
+                    with col2:
+                        st.write(f"✈️ CHF {flight * num_travelers}")
+                        st.caption("Flights")
+                    with col3:
+                        st.write(f"💰 CHF {int(total)}")
+                        st.caption("Total")
+        else:
+            st.info("Not enough data to find similar destinations.")
         
         st.divider()
         
