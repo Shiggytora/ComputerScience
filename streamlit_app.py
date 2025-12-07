@@ -193,12 +193,15 @@ def get_temperature_display(dest: Dict[str, Any]) -> str:
     """Get temperature string for a destination."""
     forecast_temp = dest.get('forecast_temp')
     current_temp = dest.get('current_temp')
-    rain_days = dest.get('rain_days', 0)
+    rain_days = dest.get('rain_days')
     
     if forecast_temp is not None:
         temp_str = f"🌡️ {forecast_temp}°C"
-        if rain_days > 0:
-            temp_str += f" | 🌧️ {rain_days} rainy days"
+        if rain_days is not None:
+            if rain_days > 0:
+                temp_str += f" | 🌧️ {rain_days} rainy days"
+            else:
+                temp_str += f" | ☀️ No rain expected"
         return temp_str
     elif current_temp is not None:
         return f"🌡️ {current_temp}°C"
