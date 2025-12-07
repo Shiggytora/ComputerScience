@@ -61,7 +61,7 @@ def get_forecast(lat: float, lon: float, start: str, end: str) -> Dict[str, Any]
                 
                 # Return calculated forecast data
                 return {"avg_temp": round(avg, 1), "max_temp": round(max(temps_max), 1), "min_temp": round(min(temps_min), 1), "rain_days": rain_days, "total_days": len(temps_max), "success": True}
-
+            
     # If any error occurs, log it and return failure       
     except requests.RequestException as e:
         print(f"Forecast API error: {e}")

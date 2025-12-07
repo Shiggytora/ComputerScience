@@ -430,7 +430,7 @@ def render_start_page():
     st.caption("📷 Images from [Unsplash](https://unsplash.com) | 🌤️ Weather data from [Open-Meteo](https://open-meteo.com) | ✈️ Flight data from [Amadeus](https://developers.amadeus.com/)")
 
 
-# Rendering of Matching Page: User picks preferred destinations in multiple rounds. 
+# Rendering of Matching Page: User picks preferred destinations in multiple rounds.
 def render_matching_page():
     render_progress_bar()
 
@@ -501,7 +501,7 @@ def render_matching_page():
         st.rerun()
 
 
-# Rendering of Results Page: Show final recommendations based on user choices. 
+# Rendering of Results Page: Show final recommendations based on user choices.
 def render_results_page():
     st.subheader("🎉 Your Perfect Destination!")
 
@@ -528,9 +528,9 @@ def render_results_page():
     
     best = ranked[0]
     
-    '''
-    The following sections render different parts of the results page. Every section is marked with a number for clarity.
-    '''
+    
+    # The following sections render different parts of the results page. Every section is marked with a number for clarity.
+    
     # 1. Hero image (Hero image is a large banner image at the top of the results page)
     hero_url = get_hero_image_url(best.get('city', ''), best.get('country', ''))
     st.image(hero_url, use_container_width=True)
@@ -661,6 +661,17 @@ def render_results_page():
         if radar:
             st.plotly_chart(radar, use_container_width=True)
     
+        # Show top 3 preferences
+        if preference:
+            sorted_prefs = sorted(preference.items(), key=lambda x: x[1], reverse=True)
+            top_3 = sorted_prefs[:3]
+        
+            # Display top 3 preferences with emojis
+            st.markdown("**🎯 Your Top 3 Preferences:**")
+            for i, (pref, value) in enumerate(top_3, 1):
+                emoji = {"beach": "🏖️", "culture": "🏛️", "nature": "🌿", "food": "🍽️", "nightlife": "🎉", "adventure": "🏔️", "romance": "💕", "family": "👨‍👩‍👧‍👦", "safety": "🛡️", "english": "🗣️", "crowds": "👥"}.get(pref, "•")
+                st.write(f"{i}.{emoji} **{pref.capitalize()}**: {value:.1f}/5")
+
     # Tab 2: Top 10 destinations bar chart
     with tab2:
         bar = create_top_destinations_chart(ranked, num_destinations=10, title="Top 10 Based on Your Preferences")
