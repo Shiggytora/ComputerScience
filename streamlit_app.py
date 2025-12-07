@@ -627,9 +627,8 @@ def render_results_page():
     st.caption("Based on your selections during matching")
     dest_map = create_destinations_map(ranked[:5], highlight_best=True, title="Top 5 Based on Your Preferences")
     if dest_map:
-        st.plotly_chart(dest_map, use_container_width=True)
-        st.caption("🥇 Gold = Best match")
-    
+        st.plotly_chart(dest_map, use_container_width=True)    
+        
     st.divider()
     
     # 6. Charts
