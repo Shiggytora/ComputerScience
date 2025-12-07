@@ -1,61 +1,151 @@
-id;city;country;continent;iata_code;latitude;longitude;avg_budget_per_day;population;safety;visa_easy;english_level;climate;best_months;crowds;is_coastal;beach;culture;nature;food;nightlife;adventure;romance;family
-1;Barcelona;Spain;Europe;BCN;41.38;2.17;120;large;4;1;4;mediterranean;apr,may,jun,sep,oct;5;1;5;4;3;5;5;3;5;4
-2;Paris;France;Europe;CDG;48. 86;2.35;180;mega;4;1;3;temperate;apr,may,jun,sep,oct;5;0;1;5;2;5;4;2;5;3
-3;London;United Kingdom;Europe;LHR;51.51;-0.13;200;mega;4;1;5;temperate;may,jun,jul,aug,sep;5;0;1;5;3;4;5;2;4;4
-4;Rome;Italy;Europe;FCO;41. 90;12.49;130;large;3;1;3;mediterranean;apr,may,sep,oct;5;0;1;5;2;5;3;2;5;4
-5;Amsterdam;Netherlands;Europe;AMS;52. 37;4.90;160;medium;5;1;5;temperate;apr,may,jun,jul,aug,sep;4;0;1;4;2;4;5;2;4;3
-6;Prague;Czech Republic;Europe;PRG;50.08;14.42;80;medium;5;1;4;continental;apr,may,jun,sep,oct;4;0;1;5;2;4;4;2;5;3
-7;Lisbon;Portugal;Europe;LIS;38.72;-9.14;100;medium;5;1;4;mediterranean;mar,apr,may,jun,sep,oct;4;1;4;4;3;5;4;3;5;4
-8;Berlin;Germany;Europe;BER;52.52;13.40;110;large;5;1;5;continental;may,jun,jul,aug,sep;3;0;1;4;2;4;5;2;3;3
-9;Vienna;Austria;Europe;VIE;48.21;16.37;130;medium;5;1;4;continental;apr,may,jun,sep,oct;3;0;1;5;2;5;3;2;5;4
-10;Copenhagen;Denmark;Europe;CPH;55.68;12.57;180;medium;5;1;5;temperate;may,jun,jul,aug;3;1;2;4;3;4;4;3;4;4
-11;Dublin;Ireland;Europe;DUB;53.35;-6.26;150;medium;5;1;5;temperate;may,jun,jul,aug,sep;3;1;2;4;4;4;5;3;4;3
-12;Reykjavik;Iceland;Europe;KEF;64.13;-21.90;220;small;5;1;5;arctic;jun,jul,aug;2;1;1;3;5;3;3;5;4;3
-13;Dubrovnik;Croatia;Europe;DBV;42.65;18.09;120;small;5;1;4;mediterranean;may,jun,sep,oct;5;1;5;4;4;4;3;3;5;3
-14;Santorini;Greece;Europe;JTR;36.40;25.43;180;tiny;5;1;4;mediterranean;may,jun,sep,oct;5;1;5;3;4;4;3;2;5;2
-15;Budapest;Hungary;Europe;BUD;47.50;19.04;70;large;4;1;4;continental;apr,may,jun,sep,oct;4;0;1;5;2;4;5;2;4;3
-16;Edinburgh;United Kingdom;Europe;EDI;55.95;-3.19;140;medium;5;1;5;temperate;may,jun,jul,aug,sep;3;1;1;5;4;4;4;3;4;4
-17;Stockholm;Sweden;Europe;ARN;59. 33;18.07;170;medium;5;1;5;continental;may,jun,jul,aug;2;1;2;4;4;4;3;3;4;4
-18;Zurich;Switzerland;Europe;ZRH;47.37;8.54;250;medium;5;1;5;continental;jun,jul,aug,sep;2;0;1;3;5;4;3;4;4;4
-19;Nice;France;Europe;NCE;43. 71;7.26;150;medium;4;1;3;mediterranean;may,jun,jul,aug,sep;4;1;5;3;4;5;4;2;5;3
-20;Munich;Germany;Europe;MUC;48.14;11.58;130;large;5;1;4;continental;may,jun,jul,aug,sep,oct;3;0;1;4;4;5;4;3;4;4
-21;Tokyo;Japan;Asia;NRT;35. 68;139.69;150;mega;5;0;2;temperate;mar,apr,may,oct,nov;4;1;2;5;3;5;4;3;4;4
-22;Bangkok;Thailand;Asia;BKK;13.75;100. 50;50;mega;3;1;3;tropical;nov,dec,jan,feb,mar;4;0;2;4;2;5;5;3;3;3
-23;Singapore;Singapore;Asia;SIN;1. 35;103.82;180;large;5;1;5;tropical;all_year;3;1;3;4;3;5;4;2;4;5
-24;Bali;Indonesia;Asia;DPS;-8.65;115.22;60;medium;4;1;3;tropical;apr,may,jun,jul,aug,sep;4;1;5;4;5;4;4;4;5;4
-25;Seoul;South Korea;Asia;ICN;37.57;126.98;100;mega;5;0;3;continental;mar,apr,may,sep,oct,nov;3;0;1;4;2;5;4;2;3;3
-26;Hong Kong;China;Asia;HKG;22.30;114.17;150;mega;5;0;4;subtropical;oct,nov,dec,mar,apr;4;1;2;4;2;5;4;2;3;4
-27;Kyoto;Japan;Asia;KIX;35.01;135.77;130;medium;5;0;2;temperate;mar,apr,may,oct,nov;4;0;1;5;4;5;2;2;5;4
-28;Vietnam_Hanoi;Vietnam;Asia;HAN;21.03;105.83;40;large;4;1;2;subtropical;oct,nov,mar,apr;3;0;1;4;3;5;3;3;3;3
-29;Phuket;Thailand;Asia;HKT;7.88;98.39;70;medium;3;1;3;tropical;nov,dec,jan,feb,mar,apr;4;1;5;2;4;4;4;4;4;4
-30;Dubai;UAE;Asia;DXB;25.20;55.27;200;large;5;1;4;desert;nov,dec,jan,feb,mar;4;1;4;3;2;4;4;3;4;5
-31;Maldives;Maldives;Asia;MLE;4.17;73.51;300;tiny;5;1;4;tropical;jan,feb,mar,apr,nov,dec;2;1;5;1;5;3;2;3;5;3
-32;New_York;USA;North America;JFK;40.71;-74.01;250;mega;4;0;5;continental;apr,may,jun,sep,oct;5;1;2;5;3;5;5;2;4;4
-33;Los_Angeles;USA;North America;LAX;34.05;-118.24;180;mega;3;0;5;mediterranean;all_year;4;1;4;4;4;4;5;3;4;4
-34;Miami;USA;North America;MIA;25.77;-80.19;180;large;3;0;5;tropical;nov,dec,jan,feb,mar,apr;4;1;5;2;3;4;5;3;4;4
-35;Vancouver;Canada;North America;YVR;49.28;-123.12;150;large;5;0;5;temperate;may,jun,jul,aug,sep;3;1;2;3;5;4;3;4;4;5
-36;Mexico_City;Mexico;North America;MEX;19.43;-99.13;60;mega;3;1;3;subtropical;mar,apr,may,oct,nov;3;0;1;5;2;5;4;2;3;3
-37;Cancun;Mexico;North America;CUN;21.16;-86.85;120;medium;3;1;4;tropical;dec,jan,feb,mar,apr;4;1;5;2;4;4;5;4;4;4
-38;Havana;Cuba;North America;HAV;23.11;-82.37;80;large;4;0;2;tropical;nov,dec,jan,feb,mar,apr;2;1;4;5;2;4;4;2;5;2
-39;Costa_Rica;Costa Rica;North America;SJO;9.93;-84.08;100;small;4;1;4;tropical;dec,jan,feb,mar,apr;2;1;4;2;5;3;3;5;4;5
-40;Toronto;Canada;North America;YYZ;43.65;-79.38;150;mega;5;0;5;continental;may,jun,jul,aug,sep;3;0;1;4;2;4;4;2;3;4
-41;Sydney;Australia;Oceania;SYD;-33.87;151.21;180;mega;5;0;5;temperate;sep,oct,nov,mar,apr,may;3;1;4;4;4;4;4;4;4;5
-42;Melbourne;Australia;Oceania;MEL;-37.81;144.96;160;mega;5;0;5;temperate;oct,nov,dec,mar,apr;3;1;3;5;3;5;4;3;4;4
-43;Auckland;New Zealand;Oceania;AKL;-36.85;174.76;140;medium;5;0;5;temperate;dec,jan,feb,mar;2;1;3;3;5;4;3;4;4;5
-44;Queenstown;New Zealand;Oceania;ZQN;-45.03;168.66;160;tiny;5;0;5;temperate;dec,jan,feb,jun,jul,aug;3;0;1;2;5;3;3;5;5;4
-45;Fiji;Fiji;Oceania;NAN;-17.76;177.44;150;tiny;4;1;4;tropical;may,jun,jul,aug,sep,oct;2;1;5;2;5;3;2;4;5;4
-46;Cape_Town;South Africa;Africa;CPT;-33.93;18.42;80;large;3;1;4;mediterranean;oct,nov,dec,jan,feb,mar;3;1;4;4;5;5;4;4;5;4
-47;Marrakech;Morocco;Africa;RAK;31.63;-7.99;70;medium;4;1;3;desert;mar,apr,may,oct,nov;4;0;1;5;2;5;3;3;5;3
-48;Cairo;Egypt;Africa;CAI;30.04;31.24;50;mega;3;1;3;desert;oct,nov,dec,feb,mar,apr;4;0;1;5;2;4;2;2;4;4
-49;Zanzibar;Tanzania;Africa;ZNZ;-6.16;39.19;100;small;4;1;3;tropical;jun,jul,aug,sep,jan,feb;2;1;5;3;4;4;2;3;5;3
-50;Mauritius;Mauritius;Africa;MRU;-20.16;57.50;150;small;5;1;4;tropical;may,jun,jul,aug,sep,oct,nov;2;1;5;2;4;4;3;3;5;4
-51;Rio_de_Janeiro;Brazil;South America;GIG;-22.91;-43.17;100;mega;2;1;3;tropical;may,jun,jul,aug,sep,oct;4;1;5;4;4;4;5;3;4;3
-52;Buenos_Aires;Argentina;South America;EZE;-34.60;-58.38;80;mega;3;1;3;temperate;mar,apr,may,sep,oct,nov;3;0;1;5;2;5;5;2;5;3
-53;Cusco;Peru;South America;CUZ;-13.53;-71.97;60;small;4;1;3;highland;apr,may,jun,jul,aug,sep;3;0;1;5;5;4;2;4;4;3
-54;Cartagena;Colombia;South America;CTG;10.39;-75.48;80;medium;3;1;3;tropical;dec,jan,feb,mar;3;1;4;4;2;4;4;3;5;3
-55;Patagonia;Argentina;South America;FTE;-50.34;-72.26;120;tiny;4;1;3;subpolar;nov,dec,jan,feb,mar;1;0;1;1;5;2;1;5;4;2
-56;Galapagos;Ecuador;South America;GPS;-0.74;-90.31;200;tiny;5;1;4;tropical;jun,jul,aug,sep,dec,jan;2;1;3;1;5;2;1;5;4;4
-57;Machu_Picchu;Peru;South America;CUZ;-13.16;-72.55;80;tiny;4;1;3;highland;apr,may,jun,jul,aug,sep;4;0;1;5;5;3;1;4;4;3
-58;Petra;Jordan;Asia;AMM;30.33;35.44;100;tiny;4;1;4;desert;mar,apr,may,oct,nov;3;0;1;5;4;3;1;3;4;3
-59;Seychelles;Seychelles;Africa;SEZ;-4.62;55.45;280;tiny;5;1;4;tropical;apr,may,oct,nov;1;1;5;1;5;3;2;2;5;3
-60;Amalfi_Coast;Italy;Europe;NAP;40.63;14.60;180;small;4;1;3;mediterranean;may,jun,sep,oct;5;1;5;4;4;5;2;2;5;3
+id;city;country;continent;iata_code;latitude;longitude;avg_budget_per_day;flight_price;population;safety;visa_easy;english_level;climate;best_months;crowds;is_coastal;beach;culture;nature;food;nightlife;adventure;romance;family
+1;Barcelona;Spain;Europe;BCN;41.3851;2.1734;120;164;large;4;1;4;mediterranean;apr,may,jun,sep,oct;5;1;5;4;3;5;5;3;5;4
+2;Paris;France;Europe;CDG;48.8566;2.35;180;183;mega;4;1;3;temperate;apr,may,jun,sep,oct;5;0;1;5;2;5;4;2;5;3
+3;London;United Kingdom;Europe;LHR;51.5074;-0.1278;200;190;mega;4;1;5;temperate;may,jun,jul,aug,sep;5;0;1;5;3;4;5;2;4;4
+4;Rome;Italy;Europe;FCO;41.9028;12.4964;130;134;large;3;1;3;mediterranean;apr,may,sep,oct;5;0;1;5;2;5;3;2;5;4
+5;Amsterdam;Netherlands;Europe;AMS;52.3676;4.9041;160;223;medium;5;1;5;temperate;apr,may,jun,jul,aug,sep;4;0;1;4;2;4;5;2;4;3
+6;Prague;Czech Republic;Europe;PRG;50.0755;14.4378;80;216;medium;5;1;4;continental;apr,may,jun,sep,oct;4;0;1;5;2;4;4;2;5;3
+7;Lisbon;Portugal;Europe;LIS;38.7223;-9.1393;100;188;medium;5;1;4;mediterranean;mar,apr,may,jun,sep,oct;4;1;4;4;3;5;4;3;5;4
+8;Berlin;Germany;Europe;BER;52.52;13.405;110;225;large;5;1;5;continental;may,jun,jul,aug,sep;3;0;1;4;2;4;5;2;3;3
+9;Vienna;Austria;Europe;VIE;48.2082;16.3738;130;235;medium;5;1;4;continental;apr,may,jun,sep,oct;3;0;1;5;2;5;3;2;5;4
+10;Copenhagen;Denmark;Europe;CPH;55.6761;12.5683;180;225;medium;5;1;5;temperate;may,jun,jul,aug;3;1;2;4;3;4;4;3;4;4
+11;Dublin;Ireland;Europe;DUB;53.3498;-6.2603;150;204;medium;5;1;5;temperate;may,jun,jul,aug,sep;3;1;2;4;4;4;5;3;4;3
+12;Reykjavik;Iceland;Europe;KEF;64.1466;-21.9426;220;297;small;5;1;5;arctic;jun,jul,aug;2;1;1;3;5;3;3;5;4;3
+13;Dubrovnik;Croatia;Europe;DBV;42.6507;18.0944;120;190;small;5;1;4;mediterranean;may,jun,sep,oct;5;1;5;4;4;4;3;3;5;3
+14;Santorini;Greece;Europe;JTR;36.3932;25.4615;180;280;tiny;5;1;4;mediterranean;may,jun,sep,oct;5;1;5;3;4;4;3;2;5;2
+15;Budapest;Hungary;Europe;BUD;47.4979;19.0402;70;226;large;4;1;4;continental;apr,may,jun,sep,oct;4;0;1;5;2;4;5;2;4;3
+16;Edinburgh;United Kingdom;Europe;EDI;55.9533;-3.1883;140;223;medium;5;1;5;temperate;may,jun,jul,aug,sep;3;1;1;5;4;4;4;3;4;4
+17;Stockholm;Sweden;Europe;ARN;59.3293;18.0686;170;207;medium;5;1;5;continental;may,jun,jul,aug;2;1;2;4;4;4;3;3;4;4
+18;Zurich;Switzerland;Europe;ZRH;47.3769;8.5417;250;0;medium;5;1;5;continental;jun,jul,aug,sep;2;0;1;3;5;4;3;4;4;4
+19;Nice;France;Europe;NCE;43.7102;7.262;150;190;medium;4;1;3;mediterranean;may,jun,jul,aug,sep;4;1;5;3;4;5;4;2;5;3
+20;Munich;Germany;Europe;MUC;48.1351;11.582;130;234;large;5;1;4;continental;may,jun,jul,aug,sep,oct;3;0;1;4;4;5;4;3;4;4
+21;Athens;Greece;Europe;ATH;37.9838;23.7275;100;177;large;4;1;3;mediterranean;apr,may,sep,oct,nov;4;1;3;5;3;4;4;2;4;3
+22;Brussels;Belgium;Europe;BRU;50.8503;4.3517;130;200;medium;4;1;4;temperate;may,jun,jul,aug,sep;3;0;1;4;2;5;4;2;3;3
+23;Florence;Italy;Europe;FLR;43.7696;11.2558;140;206;medium;4;1;3;mediterranean;apr,may,sep,oct;5;0;1;5;3;5;3;2;5;3
+24;Venice;Italy;Europe;VCE;45.4408;12.3155;180;228;medium;4;1;3;mediterranean;apr,may,sep,oct,nov;5;1;2;5;2;5;2;1;5;2
+25;Milan;Italy;Europe;MXP;45.4642;9.19;150;127;large;4;1;3;continental;apr,may,sep,oct;4;0;1;4;2;5;4;2;4;3
+26;Madrid;Spain;Europe;MAD;40.4168;-3.7038;110;194;large;4;1;3;continental;apr,may,jun,sep,oct;4;0;1;5;2;5;5;2;4;3
+27;Seville;Spain;Europe;SVQ;37.3891;-5.9845;90;212;medium;4;1;3;mediterranean;mar,apr,may,oct,nov;4;0;1;5;2;5;4;2;5;3
+28;Porto;Portugal;Europe;OPO;41.1579;-8.6291;90;196;medium;5;1;4;mediterranean;apr,may,jun,sep,oct;3;1;3;4;3;5;3;2;4;3
+29;Oslo;Norway;Europe;OSL;59.9139;10.7522;200;207;medium;5;1;5;continental;may,jun,jul,aug;2;1;1;3;5;3;3;4;4;4
+30;Helsinki;Finland;Europe;HEL;60.1699;24.9384;160;209;medium;5;1;5;continental;may,jun,jul,aug;2;1;1;4;4;4;3;3;3;4
+31;Warsaw;Poland;Europe;WAW;52.2297;21.0122;70;230;large;4;1;4;continental;may,jun,jul,aug,sep;3;0;1;4;2;4;4;2;3;3
+32;Krakow;Poland;Europe;KRK;50.0647;19.945;60;207;medium;5;1;4;continental;may,jun,jul,aug,sep;4;0;1;5;2;4;4;2;4;3
+33;Split;Croatia;Europe;SPU;43.5081;16.4402;100;190;small;5;1;4;mediterranean;may,jun,jul,aug,sep;4;1;5;4;4;4;4;3;4;3
+34;Tallinn;Estonia;Europe;TLL;59.437;24.7536;80;226;small;5;1;4;continental;may,jun,jul,aug;2;1;1;4;3;3;4;2;4;3
+35;Riga;Latvia;Europe;RIX;56.9496;24.1052;70;194;medium;4;1;4;continental;may,jun,jul,aug;2;1;1;4;3;3;4;2;3;3
+36;Ljubljana;Slovenia;Europe;LJU;46.0569;14.5058;90;228;small;5;1;4;continental;may,jun,jul,aug,sep;2;0;1;4;5;4;3;4;4;4
+37;Salzburg;Austria;Europe;SZG;47.8095;13.055;140;256;small;5;1;4;continental;jun,jul,aug,dec;3;0;1;5;5;4;2;3;5;4
+38;Geneva;Switzerland;Europe;GVA;46.2044;6.1432;260;399;medium;5;1;5;continental;may,jun,jul,aug,sep;2;0;1;3;5;4;3;4;4;4
+39;Innsbruck;Austria;Europe;INN;47.2692;11.4041;130;303;small;5;1;4;alpine;jun,jul,aug,dec,jan,feb;2;0;1;3;5;4;2;5;4;5
+40;Bruges;Belgium;Europe;BRU;51.2093;3.2247;120;200;tiny;5;1;4;temperate;apr,may,jun,sep,oct;4;0;1;5;2;4;2;1;5;3
+41;Istanbul;Turkey;Europe;IST;41.0082;28.9784;80;141;mega;3;1;3;mediterranean;apr,may,sep,oct,nov;5;1;2;5;2;5;4;2;4;3
+42;Antalya;Turkey;Europe;AYT;36.8969;30.7133;70;132;large;4;1;3;mediterranean;apr,may,jun,sep,oct;4;1;5;3;4;4;4;4;4;5
+43;Malta;Malta;Europe;MLA;35.8989;14.5146;110;212;small;5;1;5;mediterranean;apr,may,jun,sep,oct,nov;3;1;5;4;3;4;4;3;4;4
+44;Monaco;Monaco;Europe;NCE;43.7384;7.4246;350;191;tiny;5;1;4;mediterranean;may,jun,jul,aug,sep;4;1;4;3;2;5;4;2;5;2
+45;Amalfi Coast;Italy;Europe;NAP;40.6333;14.6029;180;141;small;4;1;3;mediterranean;may,jun,sep,oct;5;1;5;4;4;5;2;2;5;3
+46;Cinque Terre;Italy;Europe;GOA;44.1461;9.6439;150;167;tiny;4;1;3;mediterranean;may,jun,sep,oct;5;1;4;4;5;4;2;3;5;3
+47;Lake Como;Italy;Europe;MXP;45.9877;9.2577;200;127;small;5;1;3;continental;may,jun,jul,aug,sep;3;0;1;4;5;4;2;3;5;3
+48;Scottish Highlands;United Kingdom;Europe;INV;57.4778;-4.2247;120;257;tiny;5;1;5;temperate;may,jun,jul,aug,sep;1;1;1;3;5;3;2;5;4;4
+49;Mykonos;Greece;Europe;JMK;37.4467;25.3289;200;316;tiny;4;1;4;mediterranean;jun,jul,aug,sep;5;1;5;2;3;4;5;2;4;2
+50;Crete;Greece;Europe;HER;35.2401;24.8093;100;288;medium;5;1;3;mediterranean;may,jun,sep,oct;3;1;5;4;4;4;3;3;4;4
+51;Tokyo;Japan;Asia;NRT;35.6762;139.6503;150;1224;mega;5;0;2;temperate;mar,apr,may,oct,nov;4;1;2;5;3;5;4;3;4;4
+52;Bangkok;Thailand;Asia;BKK;13.7563;100.5018;50;605;mega;3;1;3;tropical;nov,dec,jan,feb,mar;4;0;2;4;2;5;5;3;3;3
+53;Singapore;Singapore;Asia;SIN;1.35;103.8198;180;580;large;5;1;5;tropical;all_year;3;1;3;4;3;5;4;2;4;5
+54;Bali;Indonesia;Asia;DPS;-8.3405;115.092;60;630;medium;4;1;3;tropical;apr,may,jun,jul,aug,sep;4;1;5;4;5;4;4;4;5;4
+55;Seoul;South Korea;Asia;ICN;37.5665;126.978;100;594;mega;5;0;3;continental;mar,apr,may,sep,oct,nov;3;0;1;4;2;5;4;2;3;3
+56;Hong Kong;China;Asia;HKG;22.3193;114.1694;150;848;mega;4;0;4;subtropical;oct,nov,dec,mar,apr;4;1;2;4;2;5;4;2;3;4
+57;Kyoto;Japan;Asia;KIX;35.0116;135.7681;130;612;medium;5;0;2;temperate;mar,apr,may,oct,nov;4;0;1;5;4;5;2;2;5;4
+58;Hanoi;Vietnam;Asia;HAN;21.0285;105.8542;40;756;large;4;1;2;subtropical;oct,nov,mar,apr;3;0;1;4;3;5;3;3;3;3
+59;Ho Chi Minh City;Vietnam;Asia;SGN;10.8231;106.6297;40;871;mega;3;1;2;tropical;dec,jan,feb,mar;3;0;1;4;2;5;4;3;3;3
+60;Phuket;Thailand;Asia;HKT;7.88;98.3923;70;930;medium;3;1;3;tropical;nov,dec,jan,feb,mar,apr;4;1;5;2;4;4;4;4;4;4
+61;Dubai;UAE;Asia;DXB;25.2048;55.2708;200;420;large;5;1;4;desert;nov,dec,jan,feb,mar;4;1;4;3;2;4;4;3;4;5
+62;Maldives;Maldives;Asia;MLE;4.1755;73.5093;300;991;tiny;5;1;4;tropical;jan,feb,mar,apr,nov,dec;2;1;5;1;5;3;2;3;5;3
+63;Taipei;Taiwan;Asia;TPE;25.033;121.5654;90;847;large;5;0;3;subtropical;mar,apr,may,oct,nov;3;0;1;4;3;5;4;3;3;4
+64;Kuala Lumpur;Malaysia;Asia;KUL;3.139;101.6869;60;620;large;4;1;4;tropical;may,jun,jul,aug,sep;3;0;1;4;3;5;4;2;3;4
+65;Osaka;Japan;Asia;KIX;34.6937;135.5023;130;836;large;5;0;2;temperate;mar,apr,may,oct,nov;3;1;2;4;2;5;4;2;3;4
+66;Chiang Mai;Thailand;Asia;CNX;18.7883;98.9853;40;725;medium;4;1;3;tropical;nov,dec,jan,feb,mar;2;0;1;4;4;5;3;4;4;3
+67;Siem Reap;Cambodia;Asia;REP;13.3671;103.8448;40;850;small;4;1;2;tropical;nov,dec,jan,feb,mar;3;0;1;5;3;4;3;3;4;3
+68;Luang Prabang;Laos;Asia;LPQ;19.883;102.1347;50;1006;tiny;4;1;2;tropical;nov,dec,jan,feb,mar;2;0;1;5;5;3;2;3;5;2
+69;Kathmandu;Nepal;Asia;KTM;27.7172;85.324;40;762;medium;3;1;2;subtropical;mar,apr,may,oct,nov;3;0;1;4;5;3;2;5;3;3
+70;Delhi;India;Asia;DEL;28.7041;77.1025;50;535;mega;2;1;3;subtropical;oct,nov,feb,mar;4;0;1;5;2;5;3;2;3;3
+71;Mumbai;India;Asia;BOM;19.076;72.8777;60;519;mega;3;1;3;tropical;nov,dec,jan,feb,mar;4;1;2;4;2;5;4;2;3;3
+72;Jaipur;India;Asia;JAI;26.9124;75.7873;45;620;large;3;1;2;desert;oct,nov,feb,mar;3;0;1;5;2;4;2;2;4;3
+73;Goa;India;Asia;GOI;15.2993;74.124;50;672;medium;3;1;3;tropical;nov,dec,jan,feb,mar;3;1;5;3;4;4;4;3;4;4
+74;Sri Lanka;Sri Lanka;Asia;CMB;6.9271;79.8612;60;749;medium;4;1;3;tropical;dec,jan,feb,mar,jul,aug;3;1;5;4;5;4;2;4;4;4
+75;Petra;Jordan;Asia;AMM;30.3285;35.4444;100;358;tiny;4;1;4;desert;mar,apr,may,oct,nov;3;0;1;5;4;3;1;3;4;3
+76;Tel Aviv;Israel;Asia;TLV;32.0853;34.7818;150;246;large;3;1;4;mediterranean;apr,may,jun,sep,oct,nov;4;1;5;4;2;4;5;2;4;3
+77;Jerusalem;Israel;Asia;TLV;31.7683;35.2137;130;246;medium;3;1;4;mediterranean;mar,apr,may,sep,oct,nov;4;0;1;5;2;4;2;2;4;4
+78;Oman;Oman;Asia;MCT;23.588;58.3829;120;359;medium;5;1;3;desert;oct,nov,dec,jan,feb,mar;2;1;4;4;4;4;2;4;4;3
+79;Abu Dhabi;UAE;Asia;AUH;24.4539;54.3773;180;286;large;5;1;4;desert;nov,dec,jan,feb,mar;2;1;4;3;2;4;3;3;4;5
+80;New York;USA;North America;JFK;40.7128;-74.006;250;498;mega;4;0;5;continental;apr,may,jun,sep,oct;5;1;2;5;3;5;5;2;4;4
+81;Los Angeles;USA;North America;LAX;34.0522;-118.2437;180;643;mega;3;0;5;mediterranean;all_year;4;1;4;4;4;4;5;3;4;4
+82;Miami;USA;North America;MIA;25.7617;-80.1918;180;486;large;3;0;5;tropical;nov,dec,jan,feb,mar,apr;4;1;5;2;3;4;5;3;4;4
+83;San Francisco;USA;North America;SFO;37.7749;-122.4194;200;623;large;4;0;5;mediterranean;apr,may,jun,sep,oct;3;1;3;4;4;5;4;3;4;4
+84;Las Vegas;USA;North America;LAS;36.1699;-115.1398;150;675;large;4;0;5;desert;mar,apr,may,oct,nov;4;0;1;2;3;4;5;3;4;3
+85;Vancouver;Canada;North America;YVR;49.2827;-123.1207;150;642;large;5;0;5;temperate;may,jun,jul,aug,sep;3;1;2;3;5;4;3;4;4;5
+86;Toronto;Canada;North America;YYZ;43.6532;-79.3832;150;529;mega;5;0;5;continental;may,jun,jul,aug,sep;3;0;1;4;2;4;4;2;3;4
+87;Montreal;Canada;North America;YUL;45.5017;-73.5673;130;532;large;5;0;4;continental;may,jun,jul,aug,sep;3;0;1;4;3;5;4;2;4;3
+88;Mexico City;Mexico;North America;MEX;19.4326;-99.1332;60;637;mega;3;1;3;subtropical;mar,apr,may,oct,nov;3;0;1;5;2;5;4;2;3;3
+89;Cancun;Mexico;North America;CUN;21.1619;-86.8515;120;791;medium;3;1;4;tropical;dec,jan,feb,mar,apr;4;1;5;2;4;4;5;4;4;4
+90;Playa del Carmen;Mexico;North America;CUN;20.6296;-87.0739;100;791;small;3;1;3;tropical;dec,jan,feb,mar,apr,nov;3;1;5;3;4;4;4;4;4;4
+91;Tulum;Mexico;North America;CUN;20.2114;-87.4654;110;791;small;4;1;3;tropical;dec,jan,feb,mar,apr,nov;3;1;5;4;5;4;3;3;5;3
+92;Havana;Cuba;North America;HAV;23.1136;-82.3666;80;954;large;4;0;2;tropical;nov,dec,jan,feb,mar,apr;2;1;4;5;2;4;4;2;5;2
+93;Costa Rica;Costa Rica;North America;SJO;9.9281;-84.0907;100;769;small;4;1;4;tropical;dec,jan,feb,mar,apr;2;1;4;2;5;3;3;5;4;5
+94;Jamaica;Jamaica;North America;MBJ;18.4762;-77.8939;120;743;medium;3;1;5;tropical;dec,jan,feb,mar,apr;3;1;5;3;4;4;4;3;4;4
+95;Puerto Rico;USA;North America;SJU;18.4655;-66.1057;140;753;medium;3;0;5;tropical;dec,jan,feb,mar,apr,may;3;1;5;4;4;4;4;3;4;4
+96;Dominican Republic;Dominican Republic;North America;PUJ;18.5601;-68.3725;100;778;medium;3;1;3;tropical;dec,jan,feb,mar,apr;3;1;5;2;4;3;4;3;4;5
+97;Bahamas;Bahamas;North America;NAS;25.0343;-77.3963;180;821;small;4;1;5;tropical;dec,jan,feb,mar,apr,may;3;1;5;2;4;3;4;3;4;4
+98;Sydney;Australia;Oceania;SYD;-33.8688;151.2093;180;1618;mega;5;0;5;temperate;sep,oct,nov,mar,apr,may;3;1;4;4;4;4;4;4;4;5
+99;Melbourne;Australia;Oceania;MEL;-37.8136;144.9631;160;1624;mega;5;0;5;temperate;oct,nov,dec,mar,apr;3;1;3;5;3;5;4;3;4;4
+100;Auckland;New Zealand;Oceania;AKL;-36.8509;174.7645;140;1105;medium;5;0;5;temperate;dec,jan,feb,mar;2;1;3;3;5;4;3;4;4;5
+101;Queenstown;New Zealand;Oceania;ZQN;-45.0312;168.6626;160;1758;tiny;5;0;5;temperate;dec,jan,feb,jun,jul,aug;3;0;1;2;5;3;3;5;5;4
+102;Fiji;Fiji;Oceania;NAN;-17.7765;177.4356;150;1790;tiny;4;1;4;tropical;may,jun,jul,aug,sep,oct;2;1;5;2;5;3;2;4;5;4
+103;Bora Bora;French Polynesia;Oceania;BOB;-16.5004;-151.7415;400;2200;tiny;5;1;4;tropical;may,jun,jul,aug,sep,oct;2;1;5;1;5;3;2;3;5;3
+104;Tahiti;French Polynesia;Oceania;PPT;-17.6509;-149.426;250;2077;small;5;1;4;tropical;may,jun,jul,aug,sep,oct;2;1;5;2;5;3;2;3;5;3
+105;Great Barrier Reef;Australia;Oceania;CNS;-16.9186;145.7781;180;1361;tiny;5;0;5;tropical;jun,jul,aug,sep,oct,nov;3;1;5;2;5;3;3;5;4;4
+106;Tasmania;Australia;Oceania;HBA;-42.8821;147.3272;140;1635;small;5;0;5;temperate;dec,jan,feb,mar;1;1;3;3;5;4;2;4;4;4
+107;Perth;Australia;Oceania;PER;-31.9505;115.8605;150;1442;large;5;0;5;mediterranean;sep,oct,nov,mar,apr,may;2;1;4;3;4;4;3;3;4;4
+108;Cape Town;South Africa;Africa;CPT;-33.9249;18.4241;80;806;large;3;1;4;mediterranean;oct,nov,dec,jan,feb,mar;3;1;4;4;5;5;4;4;5;4
+109;Marrakech;Morocco;Africa;RAK;31.6295;-7.9811;70;249;medium;4;1;3;desert;mar,apr,may,oct,nov;4;0;1;5;2;5;3;3;5;3
+110;Cairo;Egypt;Africa;CAI;30.0444;31.2357;50;370;mega;3;1;3;desert;oct,nov,dec,feb,mar,apr;4;0;1;5;2;4;2;2;4;4
+111;Zanzibar;Tanzania;Africa;ZNZ;-6.1659;39.2026;100;799;small;4;1;3;tropical;jun,jul,aug,sep,jan,feb;2;1;5;3;4;4;2;3;5;3
+112;Mauritius;Mauritius;Africa;MRU;-20.1609;57.5012;150;847;small;5;1;4;tropical;may,jun,jul,aug,sep,oct,nov;2;1;5;2;4;4;3;3;5;4
+113;Seychelles;Seychelles;Africa;SEZ;-4.6796;55.492;280;1003;tiny;5;1;4;tropical;apr,may,oct,nov;1;1;5;1;5;3;2;2;5;3
+114;Kruger National Park;South Africa;Africa;MQP;-24.9916;31.4543;120;1152;tiny;3;1;4;subtropical;may,jun,jul,aug,sep;2;0;1;2;5;3;1;5;4;5
+115;Victoria Falls;Zimbabwe;Africa;VFA;-17.9318;25.8325;100;709;tiny;3;1;4;tropical;apr,may,jun,jul,aug,sep;2;0;1;2;5;3;2;5;4;4
+116;Nairobi;Kenya;Africa;NBO;-1.2921;36.8219;80;677;large;2;1;4;tropical;jan,feb,jul,aug,sep;2;0;1;3;5;3;3;5;3;4
+117;Kilimanjaro;Tanzania;Africa;JRO;-3.0674;37.3556;100;708;tiny;3;1;3;tropical;jan,feb,jun,jul,aug,sep;2;0;1;2;5;2;1;5;3;3
+118;Luxor;Egypt;Africa;LXR;25.6872;32.6396;50;399;small;3;1;2;desert;oct,nov,dec,feb,mar,apr;3;0;1;5;2;3;1;2;4;3
+119;Essaouira;Morocco;Africa;ESU;31.5085;-9.7595;60;280;small;4;1;3;mediterranean;apr,may,jun,sep,oct;2;1;4;4;3;4;2;3;4;3
+120;Casablanca;Morocco;Africa;CMN;33.5731;-7.5898;70;227;large;4;1;3;mediterranean;apr,may,jun,sep,oct,nov;3;1;2;4;2;4;3;2;3;3
+121;Rio de Janeiro;Brazil;South America;GIG;-22.9068;-43.1729;100;793;mega;2;1;3;tropical;may,jun,jul,aug,sep,oct;4;1;5;4;4;4;5;3;4;3
+122;Buenos Aires;Argentina;South America;EZE;-34.6037;-58.3816;80;966;mega;3;1;3;temperate;mar,apr,may,sep,oct,nov;3;0;1;5;2;5;5;2;5;3
+123;Cusco;Peru;South America;CUZ;-13.5319;-71.9675;60;1742;small;4;1;3;highland;apr,may,jun,jul,aug,sep;3;0;1;5;5;4;2;4;4;3
+124;Machu Picchu;Peru;South America;CUZ;-13.1631;-72.545;80;1742;tiny;4;1;3;highland;apr,may,jun,jul,aug,sep;4;0;1;5;5;3;1;4;4;3
+125;Cartagena;Colombia;South America;CTG;10.391;-75.4794;80;1006;medium;3;1;3;tropical;dec,jan,feb,mar;3;1;4;4;2;4;4;3;5;3
+126;Medellin;Colombia;South America;MDE;6.2442;-75.5812;60;787;large;3;1;3;subtropical;dec,jan,feb,mar;2;0;1;3;3;4;4;3;4;3
+127;Bogota;Colombia;South America;BOG;4.711;-74.0721;50;840;mega;3;1;3;highland;dec,jan,feb,mar;2;0;1;4;2;4;4;2;3;3
+128;Patagonia;Argentina;South America;FTE;-50.3402;-72.2648;120;1786;tiny;4;1;3;subpolar;nov,dec,jan,feb,mar;1;0;1;1;5;2;1;5;4;2
+129;Galapagos;Ecuador;South America;GPS;-0.7429;-90.3035;200;1817;tiny;5;1;4;tropical;jun,jul,aug,sep,dec,jan;2;1;3;1;5;2;1;5;4;4
+130;Santiago;Chile;South America;SCL;-33.4489;-70.6693;90;1113;large;4;1;3;mediterranean;oct,nov,dec,mar,apr;2;0;1;4;4;4;4;3;3;4
+131;Lima;Peru;South America;LIM;-12.0464;-77.0428;60;981;mega;3;1;3;desert;dec,jan,feb,mar;3;1;2;4;2;5;4;2;3;3
+132;Quito;Ecuador;South America;UIO;-0.1807;-78.4678;50;675;large;3;1;3;highland;jun,jul,aug,sep;2;0;1;4;4;4;3;3;3;3
+133;La Paz;Bolivia;South America;LPB;-16.4897;-68.1193;40;1214;large;3;1;2;highland;may,jun,jul,aug,sep;2;0;1;4;4;3;2;4;3;2
+134;Uyuni Salt Flats;Bolivia;South America;UYU;-20.4604;-66.8256;50;1250;tiny;3;1;2;highland;may,jun,jul,aug,sep;2;0;1;2;5;2;1;5;4;2
+135;Montevideo;Uruguay;South America;MVD;-34.9011;-56.1645;80;1152;medium;4;1;3;temperate;oct,nov,dec,mar,apr;2;1;3;4;2;4;3;2;4;3
+136;Iguazu Falls;Argentina;South America;IGR;-25.6953;-54.4367;80;1213;tiny;4;1;3;subtropical;mar,apr,may,aug,sep,oct;3;0;1;2;5;3;1;4;4;5
+137;Fernando de Noronha;Brazil;South America;FEN;-3.8544;-32.428;200;1443;tiny;4;1;2;tropical;aug,sep,oct,nov,dec;1;1;5;1;5;3;2;4;5;3
+138;Atacama Desert;Chile;South America;CJC;-22.9108;-68.2013;100;1565;tiny;4;1;3;desert;all_year;1;0;1;2;5;2;1;5;4;2
+139;Mendoza;Argentina;South America;MDZ;-32.8895;-68.8458;70;1355;medium;4;1;3;mediterranean;mar,apr,may,sep,oct,nov;2;0;1;3;4;5;3;3;4;3
+140;Valparaiso;Chile;South America;SCL;-33.0472;-71.6127;70;1113;medium;3;1;3;mediterranean;oct,nov,dec,mar,apr;2;1;2;4;3;4;3;2;4;3
+141;Salar de Atacama;Chile;South America;CJC;-23.3;-68.15;100;1422;tiny;4;1;3;desert;all_year;1;0;1;2;5;2;1;5;4;2
+142;Easter Island;Chile;Oceania;IPC;-27.1127;-109.3497;150;2215;tiny;4;1;3;subtropical;oct,nov,dec,mar,apr;1;1;3;5;4;3;1;3;4;2
+143;Ushuaia;Argentina;South America;USH;-54.8019;-68.303;120;1246;small;4;1;3;subpolar;nov,dec,jan,feb,mar;1;1;1;2;5;3;2;5;4;3
+144;Torres del Paine;Chile;South America;PUQ;-50.9423;-73.4068;130;1827;tiny;4;1;3;subpolar;nov,dec,jan,feb,mar;2;0;1;1;5;2;1;5;4;2
+145;Amazon Rainforest;Brazil;South America;MAO;-3.119;-60.0217;100;1374;tiny;3;1;2;tropical;jun,jul,aug,sep,oct;1;0;1;2;5;3;1;5;3;4
+146;Angel Falls;Venezuela;South America;PMV;5.9675;-62.5356;120;1400;tiny;2;0;2;tropical;jun,jul,aug,sep,oct,nov;1;0;1;2;5;2;1;5;4;2
+147;Lake Titicaca;Peru;South America;JUL;-15.8402;-70.0219;50;1229;tiny;3;1;2;highland;may,jun,jul,aug,sep;2;0;1;4;5;3;1;3;4;3
+148;Arequipa;Peru;South America;AQP;-16.409;-71.5375;50;1195;medium;4;1;3;highland;apr,may,jun,jul,aug,sep,oct;2;0;1;4;4;4;2;3;4;3
+149;Colca Canyon;Peru;South America;AQP;-15.6078;-71.8814;60;1195;tiny;3;1;2;highland;apr,may,jun,jul,aug,sep;2;0;1;3;5;3;1;5;4;3
+150;Nazca Lines;Peru;South America;AQP;-14.7356;-75.1298;60;1195;tiny;3;1;2;desert;all_year;2;0;1;5;3;2;1;3;4;3
