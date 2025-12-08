@@ -13,7 +13,6 @@ DB_PATH = Path(__file__).parent.parent / "data" / "travel.db"
 
 # Database connection
 def get_connection():
-    """Create database connection."""
     if not DB_PATH.exists():
         raise FileNotFoundError(f"Database not found: {DB_PATH}")
     return sqlite3.connect(DB_PATH)
@@ -21,7 +20,6 @@ def get_connection():
 
 # Load all destinations from database
 def get_all_destinations() -> List[Dict[str, Any]]:
-    """Load all destinations from database."""
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()

@@ -26,9 +26,7 @@ FALLBACK_IMAGE = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w
 
 # Main function to get city image URL
 def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> str:
-    """
-    Get Unsplash image URL for a destination.
-    """
+    
     # No API key = use fallback
     if not UNSPLASH_ACCESS_KEY:
         return FALLBACK_IMAGE
@@ -65,10 +63,8 @@ def get_city_image_url(city: str, country: str = "", size: str = "800x500") -> s
 
 # Function to get small image of city
 def get_thumbnail_url(city: str, country: str = "") -> str:
-    """Get small thumbnail (800x500)."""
     return get_city_image_url(city, country, "800x500")
 
 # Function to get large image of city
 def get_hero_image_url(city: str, country: str = "") -> str:
-    """Get large hero image (1600x900)."""
     return get_city_image_url(city, country, "1600x900")

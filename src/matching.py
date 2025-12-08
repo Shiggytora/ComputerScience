@@ -254,7 +254,6 @@ def _build_feature_matrix(destinations: List[Dict]) -> np.ndarray:
 
 # Fit KNN model
 def _fit_knn(destinations: List[Dict]):
-    """Train KNN model on destinations."""
     global _knn_model, _knn_scaler, _knn_destinations
     
     if not destinations:

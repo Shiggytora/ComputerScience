@@ -1,4 +1,4 @@
-'''
+"""
 Main source code for front end of our web-based application using Streamlit. Handles user interaction, session state, and rendering of different pages (Start, Matching, Results).
 Structure as following:
     - Import of necessary libraries and modules.
@@ -8,7 +8,7 @@ Structure as following:
     - UI helper functions.
     - Page rendering functions for Start, Matching, and Results pages.
     - Main function to run the app.
-'''
+"""
 
 
 # Import of necessary libraries and modules

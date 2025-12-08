@@ -175,7 +175,6 @@ def create_budget_comparison_chart(destinations: List[Dict], user_budget: float,
 
 # Bar Chart for Weather Scores
 def create_weather_score_chart(destinations: List[Dict], num_destinations: int = 5, title: str = "Weather Compatibility") -> go.Figure:
-    """Bar chart of weather scores."""
     if not destinations:
         return None
     
