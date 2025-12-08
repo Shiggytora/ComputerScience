@@ -4,7 +4,7 @@ An interactive web app that helps you find your perfect travel destination - bas
 
 --------------------
 
-## Installation
+## Installation:
 
 ### 1. Extract zip
 
@@ -27,6 +27,8 @@ streamlit run streamlit_app.py
 The app is also available at https://computerscience91.streamlit.app/
 
 --------------------
+
+## Features:
 
 ### 1. Budget Filter
 - Input total budget, trip duration, and number of travelers
@@ -59,10 +61,10 @@ The app is also available at https://computerscience91.streamlit.app/
   - Bar Chart: Top 10 destinations
   - Budget Comparison: Cost comparison
   - Weather Compatibility: Weather scores
-  
+
 --------------------
 
-## Credits
+## Credits:
 
 - 📷 Images: [Unsplash](https://unsplash.com)
 - 🌤️ Weather: [Open-Meteo](https://open-meteo.com)
@@ -70,6 +72,6 @@ The app is also available at https://computerscience91.streamlit.app/
 
 --------------------
 
-## Team
+## Team:
 
 Chiara, Jade, Jan, Morena and William as Group 9.1 in the Fundamentals and Methods of Computer Science for Business Studies course.
